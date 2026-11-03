@@ -1,0 +1,113 @@
+/**
+ * Time axis boundary labels.
+ *
+ * FullCalendar labels the first slot of a time grid but never renders a label
+ * for the end of the configured range, so the last visible time is off by one
+ * slot. These helpers add that missing label without touching the labels that
+ * FullCalendar already renders.
+ */
+
+export const CALENDAR_AXIS_END_LABEL_CLASS = "tasknotes-calendar-axis-end-label";
+
+/**
+ * Parse a `HH:MM(:SS)` value into minutes from midnight. Values above 24:00 are
+ * supported on purpose, because `slotMaxTime` may extend into the next day.
+ */
+export function parseCalendarTimeToMinutes(value: string | null | undefined): number | null {
+	if (typeof value !== "string") {
+		return null;
+	}
+
+	const match = /^(\d{1,2}):([0-5]\d)(?::([0-5]\d))?$/.exec(value.trim());
+	if (!match) {
+		return null;
+	}
+
+	return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function formatClockTime(hours: number, minutes: number): string {
+	const pad = (value: number) => String(value).padStart(2, "0");
+	return `${pad(hours)}:${pad(minutes)}`;
+}
+
+/**
+ * Format a time axis boundary label.
+ *
+ * In 24-hour mode the raw clock time is preserved, so a `slotMaxTime` of 24:00
+ * stays `24:00` and 26:00 stays `26:00` instead of wrapping to the next day.
+ */
+export function formatCalendarAxisBoundaryLabel(
+	totalMinutes: number,
+	timeFormat: string,
+	locale = ""
+): string {
+	if (!Number.isFinite(totalMinutes)) {
+		return "";
+	}
+
+	const rounded = Math.round(totalMinutes);
+	const minutes = ((rounded % 60) + 60) % 60;
+	const rawHours = Math.floor(rounded / 60);
+
+	if (timeFormat === "12") {
+		const hoursInDay = ((rawHours % 24) + 24) % 24;
+		try {
+			return new Intl.DateTimeFormat(locale || undefined, {
+				hour: "2-digit",
+				minute: "2-digit",
+				hour12: true,
+			}).format(new Date(2000, 0, 1, hoursInDay, minutes));
+		} catch {
+			const hour12 = hoursInDay % 12 === 0 ? 12 : hoursInDay % 12;
+			return `${formatClockTime(hour12, minutes)} ${hoursInDay < 12 ? "AM" : "PM"}`;
+		}
+	}
+
+	return formatClockTime(rawHours, minutes);
+}
+
+export function isCalendarTimeGridView(viewType: string | null | undefined): boolean {
+	return typeof viewType === "string" && viewType.startsWith("timeGrid");
+}
+
+/**
+ * Append a single label at the bottom of the time axis that mirrors the axis
+ * styling. It is safe to call repeatedly: previous labels are replaced.
+ */
+export function applyCalendarAxisEndLabel(options: {
+	calendarEl: HTMLElement | null;
+	viewType: string | null | undefined;
+	slotMaxTime: string;
+	timeFormat: string;
+	locale?: string;
+}): void {
+	const { calendarEl, viewType, slotMaxTime, timeFormat, locale = "" } = options;
+	if (!calendarEl) {
+		return;
+	}
+
+	calendarEl
+		.querySelectorAll<HTMLElement>(`.${CALENDAR_AXIS_END_LABEL_CLASS}`)
+		.forEach((element) => element.remove());
+
+	if (!isCalendarTimeGridView(viewType)) {
+		return;
+	}
+
+	const maxMinutes = parseCalendarTimeToMinutes(slotMaxTime);
+	if (maxMinutes === null || maxMinutes <= 0) {
+		return;
+	}
+
+	const axisChunk = calendarEl.querySelector<HTMLElement>(".fc-timegrid-axis-chunk");
+	if (!axisChunk) {
+		return;
+	}
+
+	const labelEl = calendarEl.ownerDocument.createElement("div");
+	labelEl.className = `${CALENDAR_AXIS_END_LABEL_CLASS} fc-timegrid-slot-label-cushion`;
+	labelEl.dataset.tnAxisBoundary = "end";
+	labelEl.textContent = formatCalendarAxisBoundaryLabel(maxMinutes, timeFormat, locale);
+	axisChunk.appendChild(labelEl);
+}

@@ -137,6 +137,7 @@ export const DEFAULT_CALENDAR_VIEW_SETTINGS: CalendarViewSettings = {
 	slotMinTime: "00:00:00", // Start at midnight
 	slotMaxTime: "24:00:00", // End at midnight next day
 	scrollTime: "08:00:00", // Scroll to 8 AM
+	slotHeight: 24, // Time slot row height in pixels (5-60)
 	// Week settings
 	firstDay: 1, // Monday
 	// Display preferences
@@ -166,7 +167,7 @@ export const DEFAULT_CALENDAR_VIEW_SETTINGS: CalendarViewSettings = {
 	// Event display
 	eventMinHeight: 15, // FullCalendar default
 	// Event overlap and stacking behavior
-	slotEventOverlap: true, // FullCalendar default - events can visually overlap
+	slotEventOverlap: false, // Lay overlapping events out side by side instead of on top of each other
 	eventMaxStack: null, // No limit on stacked events in timeGrid (null = unlimited)
 	dayMaxEvents: true, // Auto-limit based on cell height in dayGrid
 	dayMaxEventRows: false, // No row limit in dayGrid (false = unlimited)

@@ -34,3 +34,15 @@ When a change has user-facing documentation, include a canonical tasknotes.dev l
 ```
 
 -->
+
+## Added
+
+- Added a **Time slot height** setting (5–60 px, default 24) under Settings → Appearance → Time settings, and a matching *Time slot height (px)* slider in each calendar view's options. It sets the real rendered height of the time-grid rows, so a 15-minute grid can be made as compact as a 30-minute one instead of needing a long scroll.
+
+- The time axis now shows the end of the configured range. With a day ending at `24:00` the axis ends with a `24:00` label, and ranges past midnight (`25:00`, `26:00`) keep that notation instead of wrapping to `00:00` / `02:00`.
+
+## Changed
+
+- Overlapping timed tasks are now laid out side by side by default instead of being drawn on top of each other, and columns follow priority order from left to right (highest priority first).
+
+- Tasks that only partly overlap another task now use the full column width outside the overlapping range and an equal share of the width inside it, instead of being narrowed for their whole duration. Dragging and resizing a task still moves and resizes the whole task, not just the overlapping part.

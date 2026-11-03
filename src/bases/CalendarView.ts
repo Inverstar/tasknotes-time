@@ -86,6 +86,22 @@ import {
 	type BasesEntryWithGetValue,
 } from "./calendarEventMount";
 import { CALENDAR_END_TIME_MAX_HOUR, normalizeCalendarTimeValue } from "../utils/calendarTime";
+import {
+	applyCalendarSlotHeight,
+	CALENDAR_SLOT_HEIGHT_DEFAULT,
+	normalizeCalendarSlotHeight,
+} from "./calendarSlotHeight";
+import { applyCalendarAxisEndLabel } from "./calendarTimeAxisLabels";
+import {
+	applyCalendarEventPriorityRanks,
+	resolveStaircaseDropStart,
+	resolveStaircaseResizeRange,
+	readStaircaseSegmentMeta,
+	splitOverlappingCalendarEvents,
+	TASKNOTES_PRIORITY_RANK_PROP,
+	TASKNOTES_STAIRCASE_SEGMENT_CLASS,
+	type StaircaseSegmentMeta,
+} from "./calendarOverlapLayout";
 import { filterEmptyProjects, sanitizeForCssClass } from "../utils/helpers";
 import { createTaskNotesLogger } from "../utils/tasknotesLogger";
 
@@ -145,6 +161,12 @@ const CALENDAR_DATA_UPDATE_DEBOUNCE_MS = 5000;
 const CALENDAR_DATA_SIGNATURE_CHECK_INTERVAL_MS = 250;
 const CALENDAR_DATA_SIGNATURE_CHECK_MAX_MS = 2000;
 const DEFAULT_CALENDAR_EVENT_ORDER = "start,-duration,allDay,title";
+/**
+ * FullCalendar derives the left-to-right order of overlapping events from the
+ * `eventOrder` option, so priority weight comes first: the highest priority task
+ * claims the left column, matching TaskNotes' priority ordering.
+ */
+const PRIORITY_CALENDAR_EVENT_ORDER = `-${TASKNOTES_PRIORITY_RANK_PROP}`;
 export const TASKNOTES_CALENDAR_SORT_INDEX = "tasknotesSortIndex";
 
 const Calendar = FullCalendar;
@@ -174,9 +196,9 @@ export function hasBasesCalendarSortConfig(sortConfig: unknown): boolean {
 
 export function getTaskNotesCalendarEventOrder(sortConfig: unknown): string {
 	if (!hasBasesCalendarSortConfig(sortConfig)) {
-		return DEFAULT_CALENDAR_EVENT_ORDER;
+		return `${PRIORITY_CALENDAR_EVENT_ORDER},${DEFAULT_CALENDAR_EVENT_ORDER}`;
 	}
-	return `${TASKNOTES_CALENDAR_SORT_INDEX},${DEFAULT_CALENDAR_EVENT_ORDER}`;
+	return `${PRIORITY_CALENDAR_EVENT_ORDER},${TASKNOTES_CALENDAR_SORT_INDEX},${DEFAULT_CALENDAR_EVENT_ORDER}`;
 }
 
 function getCalendarEventSortPath(event: EventInput): string | null {
@@ -488,6 +510,7 @@ export class CalendarView extends BasesViewBase {
 		slotMinTime: string;
 		slotMaxTime: string;
 		slotDuration: string;
+		slotHeight: number;
 		snapDuration: string;
 		firstDay: number;
 		weekNumbers: boolean;
@@ -560,6 +583,10 @@ export class CalendarView extends BasesViewBase {
 				true
 			),
 			slotDuration: this.validateTimeValue(calendarSettings.slotDuration, "00:30:00"),
+			slotHeight: normalizeCalendarSlotHeight(
+				calendarSettings.slotHeight,
+				CALENDAR_SLOT_HEIGHT_DEFAULT
+			),
 			snapDuration: this.validateTimeValue(calendarSettings.slotDuration, "00:30:00"),
 			scrollTime: this.validateTimeValue(calendarSettings.scrollTime, "08:00:00"),
 			firstDay: calendarSettings.firstDay,
@@ -995,6 +1022,10 @@ export class CalendarView extends BasesViewBase {
 				this.getConfigOption<string | undefined>("slotDuration", undefined),
 				this.viewOptions.slotDuration
 			);
+			this.viewOptions.slotHeight = normalizeCalendarSlotHeight(
+				this.getConfigOption<unknown>("slotHeight", this.viewOptions.slotHeight),
+				this.viewOptions.slotHeight
+			);
 			this.viewOptions.snapDuration = this.validateTimeValue(
 				this.getConfigOption<string | undefined>("snapDuration", undefined),
 				this.viewOptions.slotDuration
@@ -1104,12 +1135,14 @@ export class CalendarView extends BasesViewBase {
 			// Mark config as successfully loaded
 			this.configLoaded = true;
 			this.applyLayoutClasses();
+			this.applyTimeGridAppearance();
 
 			// Apply today highlight styling if calendar is already initialized
 			if (this.calendar) {
 				this.applyTodayHighlightStyling();
 				this.scheduleTodayColumnWidthUpdate();
 				this.scheduleDailyNoteHeaderLinkUpdate();
+				this.scheduleTimeGridAppearanceUpdate();
 			}
 		} catch (e) {
 			tasknotesLogger.error("[TaskNotes][CalendarView] Error reading view options:", {
@@ -1383,12 +1416,14 @@ export class CalendarView extends BasesViewBase {
 				this.applyLayoutClasses();
 				this.scheduleTodayColumnWidthUpdate();
 				this.scheduleDailyNoteHeaderLinkUpdate();
+				this.scheduleTimeGridAppearanceUpdate();
 				this.scheduleRefreshButtonIconUpdate();
 			},
 			datesSet: () => {
 				this.applyLayoutClasses();
 				this.scheduleTodayColumnWidthUpdate();
 				this.scheduleDailyNoteHeaderLinkUpdate();
+				this.scheduleTimeGridAppearanceUpdate();
 				this.scheduleRefreshButtonIconUpdate();
 			},
 		};
@@ -1398,11 +1433,13 @@ export class CalendarView extends BasesViewBase {
 		this.calendar.render();
 		this._recreateTargetDate = null;
 		this.applyLayoutClasses();
+		this.applyTimeGridAppearance();
 
 		// Apply showTodayHighlight option via CSS
 		this.applyTodayHighlightStyling();
 		this.scheduleTodayColumnWidthUpdate();
 		this.scheduleDailyNoteHeaderLinkUpdate();
+		this.scheduleTimeGridAppearanceUpdate();
 		this.scheduleRefreshButtonIconUpdate();
 	}
 
@@ -1555,6 +1592,33 @@ export class CalendarView extends BasesViewBase {
 		this.applyHeightModeClass();
 		this.applyTimeGridVisibilityClass();
 		this.applyCalendarModeClass();
+	}
+
+	/**
+	 * Apply time-grid specific presentation that FullCalendar does not expose as
+	 * an option: the rendered slot height and the time-axis end label.
+	 */
+	private applyTimeGridAppearance(): void {
+		applyCalendarSlotHeight(this.calendarEl, this.viewOptions.slotHeight);
+		this.applyTimeAxisEndLabel();
+	}
+
+	private applyTimeAxisEndLabel(): void {
+		if (!this.calendarEl) return;
+
+		applyCalendarAxisEndLabel({
+			calendarEl: this.calendarEl,
+			viewType: this.calendar?.view?.type ?? this.viewOptions.calendarView,
+			slotMaxTime: this.viewOptions.slotMaxTime,
+			timeFormat: this.viewOptions.timeFormat,
+			locale: this.viewOptions.locale,
+		});
+	}
+
+	private scheduleTimeGridAppearanceUpdate(): void {
+		const win = this.containerEl.ownerDocument.defaultView || window;
+		win.setTimeout(() => this.applyTimeGridAppearance(), 0);
+		win.setTimeout(() => this.applyTimeGridAppearance(), 50);
 	}
 
 	private getEffectiveHeightMode(): CalendarHeightMode {
@@ -1879,11 +1943,34 @@ export class CalendarView extends BasesViewBase {
 			);
 		}
 
-		return filterAllDayEventsForCalendarView(
+		const viewType = this.calendar?.view?.type || this.viewOptions.calendarView;
+		const visibleEvents = filterAllDayEventsForCalendarView(
 			allEvents,
-			this.calendar?.view?.type || this.viewOptions.calendarView,
+			viewType,
 			this.viewOptions.showAllDaySlot
 		);
+
+		return this.applyOverlapStaircase(visibleEvents, viewType);
+	}
+
+	/**
+	 * Split partially overlapping timed task events into per-overlap-range
+	 * segments so each segment gets its own column width. Only active when events
+	 * are laid out side by side (`slotEventOverlap: false`), because the
+	 * staircase relies on FullCalendar's per-segment column calculation.
+	 */
+	private applyOverlapStaircase(events: EventInput[], viewType: string): EventInput[] {
+		applyCalendarEventPriorityRanks(events, (priority) =>
+			typeof priority === "string"
+				? this.plugin.priorityManager?.getPriorityConfig(priority)?.weight
+				: undefined
+		);
+
+		if (this.viewOptions.slotEventOverlap || !isTimeGridCalendarView(viewType)) {
+			return events;
+		}
+
+		return splitOverlappingCalendarEvents(events);
 	}
 
 	private async buildPropertyBasedEvents(): Promise<EventInput[]> {
@@ -2135,6 +2222,16 @@ export class CalendarView extends BasesViewBase {
 			icsEvent,
 		} = info.event.extendedProps;
 
+		// Staircase segments represent only a slice of the original event, so the
+		// drop position is translated back to the original event range.
+		const staircaseMeta = readStaircaseSegmentMeta(info.event.extendedProps);
+		const dropStart = staircaseMeta
+			? resolveStaircaseDropStart(staircaseMeta, info.event.start)
+			: info.event.start;
+		const previousDropStart = staircaseMeta
+			? resolveStaircaseDropStart(staircaseMeta, info.oldEvent.start)
+			: info.oldEvent.start;
+
 		// Handle timeblock drops
 		if (eventType === "timeblock") {
 			if (!info.oldEvent.start) {
@@ -2247,8 +2344,8 @@ export class CalendarView extends BasesViewBase {
 			const plan = planTimeEntryDrop({
 				timeEntries: taskInfo.timeEntries,
 				timeEntryIndex: info.event.extendedProps.timeEntryIndex,
-				oldStart: info.oldEvent.start,
-				newStart: info.event.start,
+				oldStart: previousDropStart,
+				newStart: dropStart,
 				newEnd: info.event.end,
 			});
 			if (plan.kind === "revert") {
@@ -2282,7 +2379,21 @@ export class CalendarView extends BasesViewBase {
 			!isMaterializedOccurrenceTaskEvent &&
 			(isRecurringInstance || isNextScheduledOccurrence || isPatternInstance)
 		) {
-			await handleRecurringTaskDrop(info, taskInfo, this.plugin);
+			await handleRecurringTaskDrop(
+				staircaseMeta && dropStart
+					? {
+							event: {
+								start: dropStart,
+								end: info.event.end,
+								allDay: info.event.allDay,
+								extendedProps: info.event.extendedProps,
+							},
+							revert: () => info.revert(),
+						}
+					: info,
+				taskInfo,
+				this.plugin
+			);
 			return;
 		}
 
@@ -2292,8 +2403,8 @@ export class CalendarView extends BasesViewBase {
 				const plan = planTaskCalendarDrop({
 					eventType,
 					taskInfo,
-					newStart: info.event.start,
-					oldStart: info.oldEvent.start,
+					newStart: dropStart,
+					oldStart: previousDropStart,
 					allDay: info.event.allDay,
 				});
 				if (plan.kind === "revert") {
@@ -2350,13 +2461,33 @@ export class CalendarView extends BasesViewBase {
 		const { taskInfo, timeblock, eventType, filePath, timeEntryIndex, icsEvent } =
 			info.event.extendedProps;
 
+		// Staircase segments only expose the start resizer on the first segment and
+		// the end resizer on the last one, so a resize is mapped back to the full
+		// original event range.
+		const staircaseMeta = readStaircaseSegmentMeta(info.event.extendedProps);
+		const staircaseResize = staircaseMeta
+			? resolveStaircaseResizeRange(
+					staircaseMeta,
+					{ start: info.oldEvent.start, end: info.oldEvent.end },
+					{ start: info.event.start, end: info.event.end }
+				)
+			: null;
+
+		if (staircaseMeta && !staircaseResize) {
+			info.revert();
+			return;
+		}
+
+		const resizedStart = staircaseResize ? staircaseResize.start : info.event.start;
+		const resizedEnd = staircaseResize ? staircaseResize.end : info.event.end;
+
 		// Handle time entry resize
 		if (eventType === "timeEntry") {
 			const plan = planTimeEntryResize({
 				timeEntries: taskInfo.timeEntries,
 				timeEntryIndex,
-				newStart: info.event.start,
-				newEnd: info.event.end,
+				newStart: resizedStart,
+				newEnd: resizedEnd,
 			});
 			if (plan.kind === "revert") {
 				info.revert();
@@ -2467,8 +2598,8 @@ export class CalendarView extends BasesViewBase {
 
 		const plan = planTaskCalendarResize({
 			eventType,
-			start: info.event.start,
-			end: info.event.end,
+			start: resizedStart,
+			end: resizedEnd,
 			allDay: info.event.allDay,
 		});
 		if (plan.kind === "revert") {
@@ -2596,6 +2727,57 @@ export class CalendarView extends BasesViewBase {
 		}
 	}
 
+	private formatStaircaseEventRange(meta: StaircaseSegmentMeta): string {
+		const start = new Date(meta.originalStart);
+		const end = new Date(meta.originalEnd);
+		if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+			return "";
+		}
+
+		const pattern = this.viewOptions.timeFormat === "12" ? "h:mm a" : "HH:mm";
+		return `${format(start, pattern)} - ${format(end, pattern)}`;
+	}
+
+	/**
+	 * Decorate a staircase segment: mark it for styling and remove the resize
+	 * handles that belong to the middle of the original event, so only the real
+	 * start and end of the event stay resizable.
+	 */
+	private applyStaircaseSegmentElement(element: HTMLElement, extendedProps: unknown): void {
+		const meta = readStaircaseSegmentMeta(extendedProps);
+		if (!meta) {
+			return;
+		}
+
+		element.classList.add(TASKNOTES_STAIRCASE_SEGMENT_CLASS);
+		element.dataset.tnStaircaseSegment = String(meta.segmentIndex);
+		element.dataset.tnStaircaseSegments = String(meta.segmentCount);
+		element.dataset.tnStaircaseFirst = meta.isFirst ? "true" : "false";
+		element.dataset.tnStaircaseLast = meta.isLast ? "true" : "false";
+
+		// The first segment advertises the range of the whole event, not the range
+		// of its own slice.
+		if (meta.isFirst) {
+			const timeEl = element.querySelector<HTMLElement>(".fc-event-time");
+			const rangeText = this.formatStaircaseEventRange(meta);
+			if (timeEl && rangeText) {
+				timeEl.textContent = rangeText;
+			}
+		}
+
+		if (!meta.isFirst) {
+			element
+				.querySelectorAll(".fc-event-resizer-start")
+				.forEach((resizer) => resizer.remove());
+		}
+
+		if (!meta.isLast) {
+			element
+				.querySelectorAll(".fc-event-resizer-end")
+				.forEach((resizer) => resizer.remove());
+		}
+	}
+
 	private handleEventDidMount(arg: EventMountArg): void {
 		let extendedProps: EventMountArg["event"]["extendedProps"];
 		try {
@@ -2622,6 +2804,7 @@ export class CalendarView extends BasesViewBase {
 			isPatternInstance,
 		} = extendedProps;
 		suppressCalendarContextMenuOnMobile(arg.el);
+		this.applyStaircaseSegmentElement(arg.el, extendedProps);
 
 		const relatedNoteTotal = normalizeCalendarRelatedNoteCount(relatedNoteCount);
 		decorateCalendarIcsEventElement({

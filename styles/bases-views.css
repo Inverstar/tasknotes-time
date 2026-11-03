@@ -393,6 +393,63 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
     --fc-border-color: var(--background-modifier-border);
 }
 
+/* Time grid slot height - driven by the "Time slot height" setting */
+#bases-calendar {
+    --tn-calendar-slot-height: 24px;
+}
+
+#bases-calendar .fc .fc-timegrid-slot {
+    height: var(--tn-calendar-slot-height);
+}
+
+/* The slot lane only exists to draw grid lines, so it must not force a text-line
+   minimum height when the configured slot height is very small. */
+#bases-calendar .fc .fc-timegrid-slot-lane {
+    line-height: 0;
+}
+
+/* Keep hour labels readable at small slot heights without letting the label text
+   stretch the row: the frame collapses to zero height and the text overflows. */
+#bases-calendar .fc .fc-timegrid-slot-label-frame {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 0;
+    overflow: visible;
+}
+
+/* Staircase segments: stitch the split pieces of one event back together so it
+   reads as a single continuous block, while overlapping ranges keep their own
+   column width. Only the outer edges keep rounded corners and borders. */
+#bases-calendar .fc-timegrid-event.tn-staircase-segment:not([data-tn-staircase-first="true"]) {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top-width: 0;
+}
+
+#bases-calendar .fc-timegrid-event.tn-staircase-segment:not([data-tn-staircase-last="true"]) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-width: 0;
+}
+
+/* The time range belongs to the whole event, not to each overlap segment */
+#bases-calendar .fc-timegrid-event.tn-staircase-segment:not([data-tn-staircase-first="true"]) .fc-event-time {
+    display: none;
+}
+
+/* End-of-day label appended to the time axis (FullCalendar only labels slots) */
+#bases-calendar .tasknotes-calendar-axis-end-label {
+    position: absolute;
+    inset-inline-end: 0;
+    bottom: 0;
+    padding: 0 4px;
+    color: inherit;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
 /* Responsive design for Bases views */
 @media (max-width: 768px) {
     .tn-bases-kanban-board {

@@ -7,18 +7,20 @@ import {
 } from "../../../src/bases/CalendarView";
 
 describe("Issue #1411: Agenda Calendar Bases respect Bases sort order", () => {
-	it("uses FullCalendar's default order when the Base has no sort config", () => {
+	it("orders overlapping events by priority, then by FullCalendar's default order", () => {
 		expect(hasBasesCalendarSortConfig(undefined)).toBe(false);
 		expect(hasBasesCalendarSortConfig([])).toBe(false);
-		expect(getTaskNotesCalendarEventOrder(undefined)).toBe("start,-duration,allDay,title");
+		expect(getTaskNotesCalendarEventOrder(undefined)).toBe(
+			"-tasknotesPriorityRank,start,-duration,allDay,title"
+		);
 	});
 
-	it("puts the TaskNotes sort index first when the Base has a sort config", () => {
+	it("falls back to the TaskNotes sort index when priorities are equal", () => {
 		const sortConfig = [{ column: "note.status", direction: "ASC" }];
 
 		expect(hasBasesCalendarSortConfig(sortConfig)).toBe(true);
 		expect(getTaskNotesCalendarEventOrder(sortConfig)).toBe(
-			`${TASKNOTES_CALENDAR_SORT_INDEX},start,-duration,allDay,title`
+			`-tasknotesPriorityRank,${TASKNOTES_CALENDAR_SORT_INDEX},start,-duration,allDay,title`
 		);
 	});
 
