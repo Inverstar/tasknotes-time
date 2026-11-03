@@ -8,6 +8,7 @@
  */
 
 export const CALENDAR_AXIS_END_LABEL_CLASS = "tasknotes-calendar-axis-end-label";
+export const CALENDAR_AXIS_END_HOST_CLASS = "tasknotes-calendar-axis-end-host";
 
 /**
  * Parse a `HH:MM(:SS)` value into minutes from midnight. Values above 24:00 are
@@ -72,6 +73,29 @@ export function isCalendarTimeGridView(viewType: string | null | undefined): boo
 }
 
 /**
+ * Resolve the element the end-of-range label should be positioned against.
+ *
+ * Day views render a dedicated axis chunk that spans the whole time grid. Week
+ * and multi-day views render the axis as a single grid column cell (`fc-timegrid-col`)
+ * that likewise spans the whole grid, plus a few shrink cells in the header, so
+ * the spanning column is preferred and the last axis cell is only a fallback.
+ */
+function resolveAxisEndLabelHost(calendarEl: HTMLElement): HTMLElement | null {
+	const axisChunk = calendarEl.querySelector<HTMLElement>(".fc-timegrid-axis-chunk");
+	if (axisChunk) {
+		return axisChunk;
+	}
+
+	const axisColumn = calendarEl.querySelector<HTMLElement>(".fc-timegrid-axis.fc-timegrid-col");
+	if (axisColumn) {
+		return axisColumn;
+	}
+
+	const axisCells = calendarEl.querySelectorAll<HTMLElement>(".fc-timegrid-axis");
+	return axisCells.length > 0 ? axisCells[axisCells.length - 1] : null;
+}
+
+/**
  * Append a single label at the bottom of the time axis that mirrors the axis
  * styling. It is safe to call repeatedly: previous labels are replaced.
  */
@@ -100,14 +124,19 @@ export function applyCalendarAxisEndLabel(options: {
 		return;
 	}
 
-	const axisChunk = calendarEl.querySelector<HTMLElement>(".fc-timegrid-axis-chunk");
-	if (!axisChunk) {
+	const host = resolveAxisEndLabelHost(calendarEl);
+	if (!host) {
 		return;
 	}
+
+	// The label is absolutely positioned, so the host needs to be a containing
+	// block. The class is idempotent and harmless when FullCalendar already
+	// positioned the element.
+	host.classList.add(CALENDAR_AXIS_END_HOST_CLASS);
 
 	const labelEl = calendarEl.ownerDocument.createElement("div");
 	labelEl.className = `${CALENDAR_AXIS_END_LABEL_CLASS} fc-timegrid-slot-label-cushion`;
 	labelEl.dataset.tnAxisBoundary = "end";
 	labelEl.textContent = formatCalendarAxisBoundaryLabel(maxMinutes, timeFormat, locale);
-	axisChunk.appendChild(labelEl);
+	host.appendChild(labelEl);
 }

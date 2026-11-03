@@ -393,24 +393,27 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
     --fc-border-color: var(--background-modifier-border);
 }
 
-/* Time grid slot height - driven by the "Time slot height" setting */
+/* Time grid slot height - driven by the "Time slot height" setting.
+   #bases-calendar is the FullCalendar root element itself, so the slot rows are
+   direct descendants and must not be matched through an extra ".fc" level. */
 #bases-calendar {
     --tn-calendar-slot-height: 24px;
 }
 
-#bases-calendar .fc .fc-timegrid-slot {
+#bases-calendar .fc-timegrid-slot {
     height: var(--tn-calendar-slot-height);
+    line-height: 0;
 }
 
 /* The slot lane only exists to draw grid lines, so it must not force a text-line
    minimum height when the configured slot height is very small. */
-#bases-calendar .fc .fc-timegrid-slot-lane {
+#bases-calendar .fc-timegrid-slot-lane {
     line-height: 0;
 }
 
 /* Keep hour labels readable at small slot heights without letting the label text
    stretch the row: the frame collapses to zero height and the text overflows. */
-#bases-calendar .fc .fc-timegrid-slot-label-frame {
+#bases-calendar .fc-timegrid-slot-label-frame {
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -433,12 +436,41 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
     border-bottom-width: 0;
 }
 
-/* The time range belongs to the whole event, not to each overlap segment */
-#bases-calendar .fc-timegrid-event.tn-staircase-segment:not([data-tn-staircase-first="true"]) .fc-event-time {
+/* The full time range belongs to the whole event, but each segment is rendered as
+   its own element, so the range is rendered from a data attribute on the first
+   segment instead of FullCalendar's per-segment time text. */
+#bases-calendar .fc-timegrid-event.tn-staircase-segment .fc-event-time {
     display: none;
 }
 
-/* End-of-day label appended to the time axis (FullCalendar only labels slots) */
+/* Only the outer edges of the original event may be resized. Hiding the handles
+   also survives FullCalendar re-renders, unlike removing the elements. */
+#bases-calendar
+    .fc-timegrid-event.tn-staircase-segment:not([data-tn-staircase-first="true"])
+    .fc-event-resizer-start {
+    display: none;
+}
+
+#bases-calendar
+    .fc-timegrid-event.tn-staircase-segment:not([data-tn-staircase-last="true"])
+    .fc-event-resizer-end {
+    display: none;
+}
+
+#bases-calendar .fc-timegrid-event.tn-staircase-segment[data-tn-staircase-first="true"]::before {
+    content: attr(data-tn-event-range);
+    display: block;
+    font-size: 0.85em;
+    line-height: 1.2;
+    opacity: 0.85;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* End-of-day label appended to the time axis (FullCalendar only labels slots).
+   It is positioned against the axis chunk in day views and against the last axis
+   cell in week views. */
 #bases-calendar .tasknotes-calendar-axis-end-label {
     position: absolute;
     inset-inline-end: 0;
@@ -448,6 +480,11 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
     line-height: 1.2;
     white-space: nowrap;
     pointer-events: none;
+    font-size: var(--fc-small-font-size, 11px);
+}
+
+#bases-calendar .tasknotes-calendar-axis-end-host {
+    position: relative;
 }
 
 /* Responsive design for Bases views */

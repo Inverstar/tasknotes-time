@@ -2756,26 +2756,32 @@ export class CalendarView extends BasesViewBase {
 		element.dataset.tnStaircaseLast = meta.isLast ? "true" : "false";
 
 		// The first segment advertises the range of the whole event, not the range
-		// of its own slice.
+		// of its own slice. It is rendered from a data attribute through CSS so a
+		// FullCalendar re-render cannot duplicate or drop the text.
 		if (meta.isFirst) {
-			const timeEl = element.querySelector<HTMLElement>(".fc-event-time");
 			const rangeText = this.formatStaircaseEventRange(meta);
-			if (timeEl && rangeText) {
-				timeEl.textContent = rangeText;
+			if (rangeText) {
+				element.dataset.tnEventRange = rangeText;
 			}
 		}
 
-		if (!meta.isFirst) {
-			element
-				.querySelectorAll(".fc-event-resizer-start")
-				.forEach((resizer) => resizer.remove());
-		}
+		const trimResizers = () => {
+			if (!meta.isFirst) {
+				element
+					.querySelectorAll(".fc-event-resizer-start")
+					.forEach((resizer) => resizer.remove());
+			}
 
-		if (!meta.isLast) {
-			element
-				.querySelectorAll(".fc-event-resizer-end")
-				.forEach((resizer) => resizer.remove());
-		}
+			if (!meta.isLast) {
+				element
+					.querySelectorAll(".fc-event-resizer-end")
+					.forEach((resizer) => resizer.remove());
+			}
+		};
+
+		trimResizers();
+		// FullCalendar can attach the resize handles right after the mount callback.
+		element.ownerDocument.defaultView?.requestAnimationFrame(trimResizers);
 	}
 
 	private handleEventDidMount(arg: EventMountArg): void {

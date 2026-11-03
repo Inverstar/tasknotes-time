@@ -1,5 +1,6 @@
 import {
 	applyCalendarAxisEndLabel,
+	CALENDAR_AXIS_END_HOST_CLASS,
 	CALENDAR_AXIS_END_LABEL_CLASS,
 	formatCalendarAxisBoundaryLabel,
 	isCalendarTimeGridView,
@@ -80,6 +81,61 @@ describe("applyCalendarAxisEndLabel", () => {
 		const labels = calendarEl.querySelectorAll(`.${CALENDAR_AXIS_END_LABEL_CLASS}`);
 		expect(labels).toHaveLength(1);
 		expect(labels[0].textContent).toBe("22:00");
+	});
+
+	it("anchors the label to the spanning axis column in week views", () => {
+		const calendarEl = document.createElement("div");
+		calendarEl.innerHTML = `
+			<table>
+				<thead><tr><th class="fc-timegrid-axis fc-scrollgrid-shrink">W 45</th></tr></thead>
+				<tbody>
+					<tr>
+						<td class="fc-timegrid-col fc-timegrid-axis">
+							<div class="fc-timegrid-slot-label">23:45</div>
+						</td>
+						<td class="fc-timegrid-col"></td>
+					</tr>
+				</tbody>
+			</table>
+		`;
+
+		applyCalendarAxisEndLabel({
+			calendarEl,
+			viewType: "timeGridWeek",
+			slotMaxTime: "24:00:00",
+			timeFormat: "24",
+		});
+
+		const label = calendarEl.querySelector<HTMLElement>(`.${CALENDAR_AXIS_END_LABEL_CLASS}`);
+		const axisColumn = calendarEl.querySelector<HTMLElement>(".fc-timegrid-axis.fc-timegrid-col");
+
+		expect(label?.textContent).toBe("24:00");
+		expect(label?.parentElement).toBe(axisColumn);
+		expect(axisColumn?.classList.contains(CALENDAR_AXIS_END_HOST_CLASS)).toBe(true);
+	});
+
+	it("falls back to the last axis cell when no spanning column exists", () => {
+		const calendarEl = document.createElement("div");
+		calendarEl.innerHTML = `
+			<div class="fc-timegrid-slots">
+				<table><tbody>
+					<tr><td class="fc-timegrid-axis">23:45</td></tr>
+					<tr><td class="fc-timegrid-axis">24:00</td></tr>
+				</tbody></table>
+			</div>
+		`;
+
+		applyCalendarAxisEndLabel({
+			calendarEl,
+			viewType: "timeGridDay",
+			slotMaxTime: "24:00:00",
+			timeFormat: "24",
+		});
+
+		const label = calendarEl.querySelector<HTMLElement>(`.${CALENDAR_AXIS_END_LABEL_CLASS}`);
+		const axisCells = calendarEl.querySelectorAll<HTMLElement>(".fc-timegrid-axis");
+
+		expect(label?.parentElement).toBe(axisCells[axisCells.length - 1]);
 	});
 
 	it("removes the label for non time-grid views", () => {
