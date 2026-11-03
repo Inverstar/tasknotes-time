@@ -103,7 +103,7 @@ function hasTaskInfo(event: EventInput): boolean {
 	return isRecord(extendedProps) && isRecord(extendedProps.taskInfo);
 }
 
-function looksLikeCalendarEvent(value: unknown): value is StaircaseSegmentMeta {
+function looksLikeStaircaseSegmentMeta(value: unknown): value is StaircaseSegmentMeta {
 	return (
 		isRecord(value) &&
 		typeof value.originalId === "string" &&
@@ -119,7 +119,7 @@ export function readStaircaseSegmentMeta(extendedProps: unknown): StaircaseSegme
 	}
 
 	const candidate = extendedProps[TASKNOTES_STAIRCASE_PROP];
-	return looksLikeCalendarEvent(candidate)
+	return looksLikeStaircaseSegmentMeta(candidate)
 		? {
 				originalId: candidate.originalId,
 				originalStart: candidate.originalStart,
