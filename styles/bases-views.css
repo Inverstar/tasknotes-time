@@ -438,11 +438,19 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
 
 /* Side-by-side segments need a visible gap, otherwise adjacent tasks read as one
    block. The inline margins shrink the event box and the widened inline borders
-   keep the priority color visible between neighbours. */
+   keep the priority color visible between neighbours. Regular events are inset
+   top and bottom so they keep a vertical gap against the staircase outline,
+   while the segments stay flush so the outline of their own task remains
+   continuous. */
 #bases-calendar .fc-timegrid-event.tn-staircase-segment {
+    margin-block: 0;
     margin-inline: 2px;
     border-right-width: 2px;
     overflow: visible;
+}
+
+#bases-calendar .fc-timegrid-event {
+    margin-block: 2px;
 }
 
 /* A segment narrower than the widest segment of its task leaves a notch in the
