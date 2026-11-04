@@ -269,6 +269,8 @@ export class KanbanView extends BasesViewBase {
 	private sortScopeCandidateTaskPaths = new Map<string, string[]>();
 	private containerListenersRegistered = false;
 	private columnScrollers = new Map<string, VirtualScroller<TaskInfo>>(); // columnKey -> scroller
+	private renderPromise: Promise<void> | null = null;
+	private renderRequested = false;
 	private expandedRelationshipFilterMode: TaskCardOptions["expandedRelationshipFilterMode"] =
 		"inherit";
 	private currentVisibleTaskPaths = new Set<string>();
@@ -844,7 +846,26 @@ export class KanbanView extends BasesViewBase {
 		}
 	}
 
-	async render(): Promise<void> {
+	render(): Promise<void> {
+		this.renderRequested = true;
+		if (!this.renderPromise) {
+			// A task edit can notify both Bases and the task cache. Finish rebuilding
+			// and restoring the current board before reading scroll for another pass.
+			this.renderPromise = Promise.resolve().then(async () => {
+				try {
+					while (this.renderRequested) {
+						this.renderRequested = false;
+						await this.renderBoard();
+					}
+				} finally {
+					this.renderPromise = null;
+				}
+			});
+		}
+		return this.renderPromise;
+	}
+
+	private async renderBoard(): Promise<void> {
 		if (!this.boardEl || !this.rootElement) return;
 		if (!this.data?.data) return;
 

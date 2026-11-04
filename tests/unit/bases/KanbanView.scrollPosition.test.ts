@@ -141,6 +141,51 @@ describe("Kanban task refresh scroll positions", () => {
 		fixture.expectScroll(500);
 	});
 
+	it("keeps the position when a second update arrives while the board is being rebuilt", async () => {
+		const fixture = setup();
+		const populate = fixture.internal.renderFlat.getMockImplementation();
+		let enterFirst!: () => void;
+		const firstEntered = new Promise<void>((resolve) => {
+			enterFirst = resolve;
+		});
+		let finishFirst!: () => void;
+		const firstGate = new Promise<void>((resolve) => {
+			finishFirst = resolve;
+		});
+		let finishSecond!: () => void;
+		const secondGate = new Promise<void>((resolve) => {
+			finishSecond = resolve;
+		});
+		let populatedFirst!: () => void;
+		const firstPopulated = new Promise<void>((resolve) => {
+			populatedFirst = resolve;
+		});
+		let calls = 0;
+		fixture.internal.renderFlat.mockImplementation(async () => {
+			const first = ++calls === 1;
+			if (first) enterFirst();
+			await (first ? firstGate : secondGate);
+			await populate();
+			if (first) populatedFirst();
+		});
+		fixture.scroll(700);
+		const firstRender = fixture.view.render();
+		await firstEntered;
+		const secondRender = fixture.view.render();
+		const thirdRender = fixture.view.render();
+		const fourthRender = fixture.view.render();
+		// A large swimlane board yields while its virtualized cells are created.
+		// Another metadata notification must not capture the partly empty board.
+		for (let step = 0; step < 16; step++) await Promise.resolve();
+		finishFirst();
+		await firstPopulated;
+		for (let step = 0; step < 16; step++) await Promise.resolve();
+		finishSecond();
+		await Promise.all([firstRender, secondRender, thirdRender, fourthRender]);
+		expect(calls).toBe(2);
+		fixture.expectScroll(700);
+	});
+
 	it.each([false, true])(
 		"preserves positions across virtual-list threshold changes (next virtual: %s)",
 		async (nextVirtual) => {
