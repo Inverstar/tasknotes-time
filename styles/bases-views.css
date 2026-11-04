@@ -421,19 +421,17 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
     overflow: visible;
 }
 
-/* Staircase segments: stitch the split pieces of one event back together so it
-   reads as a single continuous block, while overlapping ranges keep their own
-   column width. Only the outer edges keep rounded corners and borders. */
+/* Staircase segments: every segment is a closed rectangle sharing the event's
+   priority color, so the outline traces the staircase: full width outside the
+   overlap and an equal share inside it. Only the first segment renders content. */
 #bases-calendar .fc-timegrid-event.tn-staircase-segment:not([data-tn-staircase-first="true"]) {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
-    border-top-width: 0;
 }
 
 #bases-calendar .fc-timegrid-event.tn-staircase-segment:not([data-tn-staircase-last="true"]) {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    border-bottom-width: 0;
 }
 
 /* Side-by-side segments need a visible gap, otherwise adjacent tasks read as one
