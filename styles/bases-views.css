@@ -436,10 +436,25 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
     border-bottom-width: 0;
 }
 
+/* Side-by-side segments need a visible gap, otherwise adjacent tasks read as one
+   block. The inline margins shrink the event box and the widened inline borders
+   keep the priority color visible between neighbours. */
+#bases-calendar .fc-timegrid-event.tn-staircase-segment {
+    margin-inline: 2px;
+    border-right-width: 2px;
+}
+
 /* The full time range belongs to the whole event, but each segment is rendered as
-   its own element, so the range is rendered from a data attribute on the first
-   segment instead of FullCalendar's per-segment time text. */
+   its own element. Only the first segment shows content: the time range comes
+   from a data attribute and the title is FullCalendar's own, so later segments
+   stay empty to avoid repeating the task everywhere. */
 #bases-calendar .fc-timegrid-event.tn-staircase-segment .fc-event-time {
+    display: none;
+}
+
+#bases-calendar
+    .fc-timegrid-event.tn-staircase-segment:not([data-tn-staircase-first="true"])
+    .fc-event-main {
     display: none;
 }
 
