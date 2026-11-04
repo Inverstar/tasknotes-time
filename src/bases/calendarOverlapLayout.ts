@@ -19,6 +19,8 @@ import { format } from "date-fns";
 export const TASKNOTES_STAIRCASE_PROP = "tasknotesStaircase";
 export const TASKNOTES_PRIORITY_RANK_PROP = "tasknotesPriorityRank";
 export const TASKNOTES_STAIRCASE_SEGMENT_CLASS = "tn-staircase-segment";
+export const TASKNOTES_STAIRCASE_NOTCH_TOP_CLASS = "tn-staircase-notch-top";
+export const TASKNOTES_STAIRCASE_NOTCH_BOTTOM_CLASS = "tn-staircase-notch-bottom";
 
 const DEFAULT_EVENT_DURATION_MS = 30 * 60 * 1000;
 

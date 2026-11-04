@@ -100,6 +100,8 @@ import {
 	splitOverlappingCalendarEvents,
 	TASKNOTES_PRIORITY_RANK_PROP,
 	TASKNOTES_STAIRCASE_SEGMENT_CLASS,
+	TASKNOTES_STAIRCASE_NOTCH_BOTTOM_CLASS,
+	TASKNOTES_STAIRCASE_NOTCH_TOP_CLASS,
 	type StaircaseSegmentMeta,
 } from "./calendarOverlapLayout";
 import { filterEmptyProjects, sanitizeForCssClass } from "../utils/helpers";
@@ -2750,6 +2752,7 @@ export class CalendarView extends BasesViewBase {
 		}
 
 		element.classList.add(TASKNOTES_STAIRCASE_SEGMENT_CLASS);
+		element.dataset.tnStaircaseTask = meta.originalId;
 		element.dataset.tnStaircaseSegment = String(meta.segmentIndex);
 		element.dataset.tnStaircaseSegments = String(meta.segmentCount);
 		element.dataset.tnStaircaseFirst = meta.isFirst ? "true" : "false";
@@ -2782,6 +2785,76 @@ export class CalendarView extends BasesViewBase {
 		trimResizers();
 		// FullCalendar can attach the resize handles right after the mount callback.
 		element.ownerDocument.defaultView?.requestAnimationFrame(trimResizers);
+		// The outline notches need the widths of the sibling segments; all segments
+		// of one render batch are mounted by the time didMount runs, so measuring
+		// synchronously works, and the deferred pass covers late mounts.
+		this.syncStaircaseNotchLines(element);
+		element.ownerDocument.defaultView?.requestAnimationFrame(() => {
+			this.syncStaircaseNotchLines(element);
+		});
+	}
+
+	/**
+	 * Draw the horizontal "notch" lines that close the staircase outline.
+	 *
+	 * A segment that is narrower than the widest segment of the same task leaves a
+	 * gap in the outline where a neighbouring task sits. The top and/or bottom
+	 * edge of that gap is drawn by a pseudo element on the narrow segment, sized
+	 * from the measured segment rectangles.
+	 */
+	private syncStaircaseNotchLines(element: HTMLElement): void {
+		const taskId = element.dataset.tnStaircaseTask;
+		if (!taskId || !this.calendarEl) {
+			return;
+		}
+
+		const selector = `[data-tn-staircase-task="${CSS.escape(taskId)}"]`;
+		const segments = [
+			...this.calendarEl.querySelectorAll<HTMLElement>(selector),
+		].sort(
+			(a, b) =>
+				Number(a.dataset.tnStaircaseSegment ?? 0) - Number(b.dataset.tnStaircaseSegment ?? 0)
+		);
+		if (segments.length < 2) {
+			return;
+		}
+
+		const rects = segments.map((segment) => segment.getBoundingClientRect());
+
+		segments.forEach((segment, index) => {
+			const rect = rects[index];
+			const isNarrow = rect.width < Math.max(...rects.map((r) => r.width)) - 1;
+			if (!isNarrow) {
+				segment.classList.remove(
+					TASKNOTES_STAIRCASE_NOTCH_TOP_CLASS,
+					TASKNOTES_STAIRCASE_NOTCH_BOTTOM_CLASS
+				);
+				return;
+			}
+
+			const previous = index > 0 ? rects[index - 1] : null;
+			const next = index < rects.length - 1 ? rects[index + 1] : null;
+			const hasWiderAbove = previous ? previous.width > rect.width + 1 : false;
+			const hasWiderBelow = next ? next.width > rect.width + 1 : false;
+
+			segment.classList.toggle(TASKNOTES_STAIRCASE_NOTCH_TOP_CLASS, hasWiderAbove);
+			segment.classList.toggle(TASKNOTES_STAIRCASE_NOTCH_BOTTOM_CLASS, hasWiderBelow);
+
+			if (!hasWiderAbove && !hasWiderBelow) {
+				return;
+			}
+
+			const style = getComputedStyle(segment);
+			// The extension is stored as a percentage of the segment width so the
+			// notch lines keep tracking the outline across resizes.
+			const widest = Math.max(...rects.map((r) => r.width));
+			const extendRatio = (widest / rect.width - 1) * 100;
+			segment.style.setProperty("--tn-seg-extend", `${extendRatio.toFixed(2)}%`);
+			segment.style.setProperty("--tn-seg-line-color", style.borderLeftColor);
+			segment.style.setProperty("--tn-seg-btw", style.borderTopWidth);
+			segment.style.setProperty("--tn-seg-bbw", style.borderBottomWidth);
+			segment.style.setProperty("--tn-seg-brw", style.borderRightWidth);
+		});
 	}
 
 	private handleEventDidMount(arg: EventMountArg): void {

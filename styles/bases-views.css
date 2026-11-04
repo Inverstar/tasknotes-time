@@ -421,17 +421,19 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
     overflow: visible;
 }
 
-/* Staircase segments: every segment is a closed rectangle sharing the event's
-   priority color, so the outline traces the staircase: full width outside the
-   overlap and an equal share inside it. Only the first segment renders content. */
+/* Staircase segments: the segments share one continuous outline - stacked edges
+   stay borderless so the task reads as a single block, while the outline of the
+   staircase is closed by the notch lines drawn next to a wider neighbour. */
 #bases-calendar .fc-timegrid-event.tn-staircase-segment:not([data-tn-staircase-first="true"]) {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
+    border-top-width: 0;
 }
 
 #bases-calendar .fc-timegrid-event.tn-staircase-segment:not([data-tn-staircase-last="true"]) {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
+    border-bottom-width: 0;
 }
 
 /* Side-by-side segments need a visible gap, otherwise adjacent tasks read as one
@@ -440,6 +442,32 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
 #bases-calendar .fc-timegrid-event.tn-staircase-segment {
     margin-inline: 2px;
     border-right-width: 2px;
+    overflow: visible;
+}
+
+/* A segment narrower than the widest segment of its task leaves a notch in the
+   outline where a neighbouring task sits. The measured width and the event's
+   border color are provided by CalendarView as custom properties. */
+#bases-calendar .fc-timegrid-event.tn-staircase-segment.tn-staircase-notch-top::before {
+    content: "";
+    position: absolute;
+    top: calc(0px - var(--tn-seg-btw, 0px));
+    left: calc(100% + var(--tn-seg-brw, 2px));
+    width: var(--tn-seg-extend, 0px);
+    height: 1px;
+    background: var(--tn-seg-line-color, var(--background-modifier-border));
+    pointer-events: none;
+}
+
+#bases-calendar .fc-timegrid-event.tn-staircase-segment.tn-staircase-notch-bottom::after {
+    content: "";
+    position: absolute;
+    bottom: calc(0px - var(--tn-seg-bbw, 0px));
+    left: calc(100% + var(--tn-seg-brw, 2px));
+    width: var(--tn-seg-extend, 0px);
+    height: 1px;
+    background: var(--tn-seg-line-color, var(--background-modifier-border));
+    pointer-events: none;
 }
 
 /* The full time range belongs to the whole event, but each segment is rendered as
