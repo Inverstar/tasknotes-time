@@ -1633,6 +1633,11 @@ export const fr: TranslationTree = {
 					description: "Hauteur en pixels de chaque créneau horaire (5-60). Réduisez-la avec des créneaux de 15 minutes pour afficher une journée entière sans défilement.",
 					placeholder: "24",
 				},
+				snapDuration: {
+					name: "Précision du glisser-déposer",
+					description: "Précision à laquelle les tâches déplacées et les plages sélectionnées s'alignent sur l'heure dans toutes les vues du calendrier. Laissez vide pour suivre la durée des créneaux ; saisissez 00:01:00 (ou 1) pour un alignement à la minute.",
+					placeholder: "Minutes ou HH:mm:ss (ex. 00:01:00)",
+				},
 				startTime: {
 					name: "Heure de début",
 					description:

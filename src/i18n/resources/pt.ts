@@ -1621,6 +1621,11 @@ export const pt: TranslationTree = {
 					description: "Altura em pixels de cada linha de intervalo (5-60). Reduza ao usar intervalos de 15 minutos para ver o dia inteiro sem rolar.",
 					placeholder: "24",
 				},
+				snapDuration: {
+					name: "Resolução de arrastar e soltar",
+					description: "Precisão com que tarefas arrastadas e intervalos selecionados se ajustam ao relógio em todas as vistas de calendário. Deixe vazio para seguir a duração do intervalo; use 00:01:00 (ou 1) para ajustes de um minuto.",
+					placeholder: "Minutos ou HH:mm:ss (ex.: 00:01:00)",
+				},
 				startTime: {
 					name: "Hora de início",
 					description:

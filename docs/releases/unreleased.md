@@ -41,6 +41,8 @@ When a change has user-facing documentation, include a canonical tasknotes.dev l
 
 - The time axis now shows the end of the configured range. With a day ending at `24:00` the axis ends with a `24:00` label, and ranges past midnight (`25:00`, `26:00`) keep that notation instead of wrapping to `00:00` / `02:00`.
 
+- Added a **Drag and drop resolution** setting under Settings → Appearance → Time settings. It controls how precisely dragged tasks and selected time ranges snap to the clock in every calendar view. Leave it empty to keep following the time slot duration, or enter `00:01:00` (or just `1`) for one-minute dragging without having to configure each view separately. A view's own *Drag and drop resolution* option still takes precedence when it is set.
+
 ## Changed
 
 - Overlapping timed tasks are now laid out side by side by default instead of being drawn on top of each other, and columns follow priority order from left to right (highest priority first).

@@ -85,7 +85,11 @@ import {
 	normalizeCalendarRelatedNoteCount,
 	type BasesEntryWithGetValue,
 } from "./calendarEventMount";
-import { CALENDAR_END_TIME_MAX_HOUR, normalizeCalendarTimeValue } from "../utils/calendarTime";
+import {
+	CALENDAR_END_TIME_MAX_HOUR,
+	normalizeCalendarTimeValue,
+	resolveCalendarSnapDuration,
+} from "../utils/calendarTime";
 import {
 	applyCalendarSlotHeight,
 	CALENDAR_SLOT_HEIGHT_DEFAULT,
@@ -589,7 +593,10 @@ export class CalendarView extends BasesViewBase {
 				calendarSettings.slotHeight,
 				CALENDAR_SLOT_HEIGHT_DEFAULT
 			),
-			snapDuration: this.validateTimeValue(calendarSettings.slotDuration, "00:30:00"),
+			snapDuration: resolveCalendarSnapDuration(
+				calendarSettings.snapDuration,
+				calendarSettings.slotDuration
+			),
 			scrollTime: this.validateTimeValue(calendarSettings.scrollTime, "08:00:00"),
 			firstDay: calendarSettings.firstDay,
 			weekNumbers: calendarSettings.weekNumbers,
@@ -1028,9 +1035,16 @@ export class CalendarView extends BasesViewBase {
 				this.getConfigOption<unknown>("slotHeight", this.viewOptions.slotHeight),
 				this.viewOptions.slotHeight
 			);
+			// An empty global setting keeps the old behaviour of following the
+			// view's own slot duration; a concrete global value applies to every
+			// view unless that view overrides it in its options.
+			const globalSnapDuration = resolveCalendarSnapDuration(
+				this.plugin?.settings?.calendarViewSettings?.snapDuration,
+				this.viewOptions.slotDuration
+			);
 			this.viewOptions.snapDuration = this.validateTimeValue(
 				this.getConfigOption<string | undefined>("snapDuration", undefined),
-				this.viewOptions.slotDuration
+				globalSnapDuration
 			);
 			this.viewOptions.scrollTime = this.validateTimeValue(
 				this.getConfigOption<string | undefined>("scrollTime", undefined),

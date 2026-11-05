@@ -1849,6 +1849,11 @@ export const en: TranslationTree = {
 						"Height of each time slot row in pixels (5-60). Lower it when using 15-minute slots to keep a full day from scrolling.",
 					placeholder: "24",
 				},
+				snapDuration: {
+					name: "Drag and drop resolution",
+					description: "How precisely dragged tasks and selected times snap to the clock in every calendar view. Leave empty to follow the time slot duration; enter 00:01:00 (or 1) for one-minute snapping.",
+					placeholder: "Minutes or HH:mm:ss (e.g. 00:01:00)",
+				},
 				startTime: {
 					name: "Start time",
 					description: "Earliest time shown in timeline views (HH:MM format)",

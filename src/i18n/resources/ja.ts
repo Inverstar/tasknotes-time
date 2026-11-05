@@ -1589,6 +1589,11 @@ export const ja: TranslationTree = {
 					description: "各時間枠の行の高さ（ピクセル、5〜60）。15分刻みのときに小さくすると、1日分をスクロールせずに表示できます。",
 					placeholder: "24",
 				},
+				snapDuration: {
+					name: "ドラッグ＆ドロップの粒度",
+					description: "すべてのカレンダービューで、ドラッグしたタスクや選択した時間が時刻に吸着する精度です。空欄にすると時間枠の間隔に従います。00:01:00（または 1）を入力すると 1 分単位になります。",
+					placeholder: "分または HH:mm:ss（例：00:01:00）",
+				},
 				startTime: {
 					name: "開始時刻",
 					description: "タイムラインビューで表示される最早時刻（HH:MM形式）",

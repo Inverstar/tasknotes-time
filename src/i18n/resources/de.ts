@@ -1619,6 +1619,11 @@ export const de: TranslationTree = {
 					description: "Höhe jeder Zeitfensterzeile in Pixeln (5–60). Bei 15-Minuten-Schritten verringern, damit ein ganzer Tag ohne Scrollen passt.",
 					placeholder: "24",
 				},
+				snapDuration: {
+					name: "Auflösung für Ziehen und Ablegen",
+					description: "Legt fest, auf welche Zeitstufen gezogene Aufgaben und ausgewählte Zeiträume in allen Kalenderansichten einrasten. Leer lassen, um der Zeitfensterdauer zu folgen; 00:01:00 (oder 1) ergibt Minutenschritte.",
+					placeholder: "Minuten oder HH:mm:ss (z. B. 00:01:00)",
+				},
 				startTime: {
 					name: "Startzeit",
 					description: "Früheste Zeit in Timeline-Ansichten (HH:MM Format)",

@@ -1629,6 +1629,11 @@ export const es: TranslationTree = {
 					description: "Altura en píxeles de cada franja horaria (5-60). Redúcela al usar franjas de 15 minutos para ver un día completo sin desplazarte.",
 					placeholder: "24",
 				},
+				snapDuration: {
+					name: "Resolución de arrastrar y soltar",
+					description: "Precisión con la que las tareas arrastradas y los rangos seleccionados se ajustan al reloj en todas las vistas de calendario. Déjalo vacío para seguir la duración del intervalo; usa 00:01:00 (o 1) para ajustes de un minuto.",
+					placeholder: "Minutos o HH:mm:ss (p. ej. 00:01:00)",
+				},
 				startTime: {
 					name: "Hora de inicio",
 					description:
