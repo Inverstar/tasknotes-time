@@ -523,7 +523,7 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
 #bases-calendar .tasknotes-calendar-axis-end-label {
     position: absolute;
     inset-inline-end: 0;
-    bottom: 0;
+    bottom: calc(0px - var(--tn-axis-end-extra, 0px));
     padding: 0 4px;
     color: inherit;
     line-height: 1.2;
@@ -534,11 +534,6 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
 
 #bases-calendar .tasknotes-calendar-axis-end-host {
     position: relative;
-}
-
-/* The last native axis label is hidden when it would collide with the end label. */
-#bases-calendar .tasknotes-calendar-axis-label-suppressed {
-    visibility: hidden;
 }
 
 /* Responsive design for Bases views */
