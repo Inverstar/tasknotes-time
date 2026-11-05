@@ -1313,7 +1313,7 @@ export class CalendarView extends BasesViewBase {
 							"views.basesCalendar.hints.prevPeriod"
 						) || "Previous period",
 					click: () => {
-						(this.calendar as unknown as CalendarApi | null)?.prev();
+						this.shiftCalendarViewByPeriod(-1);
 					},
 				},
 				prevDay: {
@@ -1322,9 +1322,7 @@ export class CalendarView extends BasesViewBase {
 						this.plugin.i18n.translate("views.basesCalendar.hints.prevDay") ||
 						"Previous day",
 					click: () => {
-						(this.calendar as unknown as CalendarApi | null)?.incrementDate({
-							days: -1,
-						});
+						this.shiftCalendarViewByDays(-1);
 					},
 				},
 				nextDay: {
@@ -1333,9 +1331,7 @@ export class CalendarView extends BasesViewBase {
 						this.plugin.i18n.translate("views.basesCalendar.hints.nextDay") ||
 						"Next day",
 					click: () => {
-						(this.calendar as unknown as CalendarApi | null)?.incrementDate({
-							days: 1,
-						});
+						this.shiftCalendarViewByDays(1);
 					},
 				},
 				nextPeriod: {
@@ -1345,7 +1341,7 @@ export class CalendarView extends BasesViewBase {
 							"views.basesCalendar.hints.nextPeriod"
 						) || "Next period",
 					click: () => {
-						(this.calendar as unknown as CalendarApi | null)?.next();
+						this.shiftCalendarViewByPeriod(1);
 					},
 				},
 				refreshCalendars: {
@@ -1361,9 +1357,17 @@ export class CalendarView extends BasesViewBase {
 				},
 			},
 			views: {
+				// Day alignment keeps these views from snapping back to the week
+				// edge, so the day buttons can slide the range one day at a time.
+				timeGridWeek: {
+					type: "timeGrid",
+					duration: { weeks: 1 },
+					dateAlignment: "day",
+				},
 				timeGridCustom: {
 					type: "timeGrid",
 					duration: { days: this.viewOptions.customDayCount },
+					dateAlignment: "day",
 					buttonText: this.plugin.i18n.translate(
 						"views.basesCalendar.buttonText.customDays",
 						{
@@ -1644,6 +1648,43 @@ export class CalendarView extends BasesViewBase {
 		this.applyHeightModeClass();
 		this.applyTimeGridVisibilityClass();
 		this.applyCalendarModeClass();
+	}
+
+	/**
+	 * Move the visible range by a number of days. Time-grid views use day
+	 * alignment so they slide instead of snapping back to the week edge.
+	 */
+	private shiftCalendarViewByDays(delta: number): void {
+		const api = this.calendar as unknown as CalendarApi | null;
+		api?.incrementDate({ days: delta });
+	}
+
+	/**
+	 * Move the visible range by one view length. Time-grid views are measured in
+	 * days so the period buttons stay in sync with the sliding range; the other
+	 * views keep FullCalendar's native period navigation.
+	 */
+	private shiftCalendarViewByPeriod(direction: -1 | 1): void {
+		const api = this.calendar as unknown as CalendarApi | null;
+		if (!api) return;
+
+		const view = api.view;
+		if (view.type.startsWith("timeGrid")) {
+			const days = Math.max(
+				1,
+				Math.round(
+					(view.currentEnd.getTime() - view.currentStart.getTime()) / 86_400_000
+				)
+			);
+			api.incrementDate({ days: direction * days });
+			return;
+		}
+
+		if (direction > 0) {
+			api.next();
+		} else {
+			api.prev();
+		}
 	}
 
 	/**
