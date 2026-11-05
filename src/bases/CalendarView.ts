@@ -7,6 +7,7 @@ import type { TimeblockCreationResult } from "../modals/TimeblockCreationModal";
 import {
 	Calendar as FullCalendar,
 	CalendarOptions,
+	type CalendarApi,
 	type DateSelectArg,
 	type EventClickArg,
 	type EventDropArg,
@@ -86,6 +87,7 @@ import {
 	type BasesEntryWithGetValue,
 } from "./calendarEventMount";
 import { CALENDAR_END_TIME_MAX_HOUR, normalizeCalendarTimeValue } from "../utils/calendarTime";
+import { CALENDAR_DAY_NAVIGATION_TOOLBAR } from "./calendarDayNavigation";
 import { filterEmptyProjects, sanitizeForCssClass } from "../utils/helpers";
 import { createTaskNotesLogger } from "../utils/tasknotesLogger";
 
@@ -1238,7 +1240,7 @@ export class CalendarView extends BasesViewBase {
 			initialView: this.viewOptions.calendarView,
 			initialDate: initialDate,
 			headerToolbar: {
-				left: "prev,next today refreshCalendars",
+				left: CALENDAR_DAY_NAVIGATION_TOOLBAR,
 				center: "title",
 				right: "multiMonthYear,dayGridMonth,timeGridWeek,timeGridCustom,timeGridDay,listWeek",
 			},
@@ -1263,6 +1265,48 @@ export class CalendarView extends BasesViewBase {
 				list: this.plugin.i18n.translate("views.basesCalendar.hints.list") || "List view",
 			},
 			customButtons: {
+				prevPeriod: {
+					text: "<<",
+					hint:
+						this.plugin.i18n.translate(
+							"views.basesCalendar.hints.prevPeriod"
+						) || "Previous period",
+					click: () => {
+						(this.calendar as unknown as CalendarApi | null)?.prev();
+					},
+				},
+				prevDay: {
+					text: "<",
+					hint:
+						this.plugin.i18n.translate("views.basesCalendar.hints.prevDay") ||
+						"Previous day",
+					click: () => {
+						(this.calendar as unknown as CalendarApi | null)?.incrementDate({
+							days: -1,
+						});
+					},
+				},
+				nextDay: {
+					text: ">",
+					hint:
+						this.plugin.i18n.translate("views.basesCalendar.hints.nextDay") ||
+						"Next day",
+					click: () => {
+						(this.calendar as unknown as CalendarApi | null)?.incrementDate({
+							days: 1,
+						});
+					},
+				},
+				nextPeriod: {
+					text: ">>",
+					hint:
+						this.plugin.i18n.translate(
+							"views.basesCalendar.hints.nextPeriod"
+						) || "Next period",
+					click: () => {
+						(this.calendar as unknown as CalendarApi | null)?.next();
+					},
+				},
 				refreshCalendars: {
 					text:
 						this.plugin.i18n.translate("views.basesCalendar.buttonText.refresh") ||
