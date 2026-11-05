@@ -1640,7 +1640,7 @@ export const fr: TranslationTree = {
 				},
 				sideBySideOverlap: {
 					name: "Afficher les tâches superposées côte à côte",
-					description: "Les tâches superposées se répartissent en colonnes de gauche à droite par priorité et gardent toute la largeur hors de la zone de chevauchement (disposition en escalier). Désactivez cette option pour les superposer à nouveau. L'option « Autoriser le chevauchement des événements » de la vue reste prioritaire.",
+					description: "Les tâches superposées sont placées côte à côte par priorité et conservent cette largeur pendant toute leur durée. Désactivez cette option pour les superposer à nouveau. L'option « Autoriser le chevauchement des événements » de la vue reste prioritaire.",
 				},
 				startTime: {
 					name: "Heure de début",

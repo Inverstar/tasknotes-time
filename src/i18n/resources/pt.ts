@@ -1628,7 +1628,7 @@ export const pt: TranslationTree = {
 				},
 				sideBySideOverlap: {
 					name: "Mostrar tarefas sobrepostas lado a lado",
-					description: "As tarefas sobrepostas partilham colunas da esquerda para a direita por prioridade e mantêm a largura total fora da sobreposição (layout em escada). Desative para as desenhar novamente umas sobre as outras. A opção «Permitir sobreposição de eventos» da vista continua a ter precedência.",
+					description: "As tarefas sobrepostas são colocadas lado a lado por prioridade e mantêm essa largura durante toda a sua duração. Desative para as desenhar novamente umas sobre as outras. A opção «Permitir sobreposição de eventos» da vista continua a ter precedência.",
 				},
 				startTime: {
 					name: "Hora de início",

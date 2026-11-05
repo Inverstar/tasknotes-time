@@ -98,15 +98,7 @@ import {
 import { applyCalendarAxisStartLabel } from "./calendarTimeAxisLabels";
 import {
 	applyCalendarEventPriorityRanks,
-	resolveStaircaseDropStart,
-	resolveStaircaseResizeRange,
-	readStaircaseSegmentMeta,
-	splitOverlappingCalendarEvents,
 	TASKNOTES_PRIORITY_RANK_PROP,
-	TASKNOTES_STAIRCASE_SEGMENT_CLASS,
-	TASKNOTES_STAIRCASE_NOTCH_BOTTOM_CLASS,
-	TASKNOTES_STAIRCASE_NOTCH_TOP_CLASS,
-	type StaircaseSegmentMeta,
 } from "./calendarOverlapLayout";
 import { filterEmptyProjects, sanitizeForCssClass } from "../utils/helpers";
 import { createTaskNotesLogger } from "../utils/tasknotesLogger";
@@ -1966,27 +1958,16 @@ export class CalendarView extends BasesViewBase {
 			this.viewOptions.showAllDaySlot
 		);
 
-		return this.applyOverlapStaircase(visibleEvents, viewType);
-	}
-
-	/**
-	 * Split partially overlapping timed task events into per-overlap-range
-	 * segments so each segment gets its own column width. Only active when events
-	 * are laid out side by side (`slotEventOverlap: false`), because the
-	 * staircase relies on FullCalendar's per-segment column calculation.
-	 */
-	private applyOverlapStaircase(events: EventInput[], viewType: string): EventInput[] {
-		applyCalendarEventPriorityRanks(events, (priority) =>
+		// FullCalendar lays overlapping events out in side-by-side columns when
+		// slotEventOverlap is false; priority weight decides which column is left.
+		// Events stay whole, so a task keeps the same width for its entire duration.
+		applyCalendarEventPriorityRanks(visibleEvents, (priority) =>
 			typeof priority === "string"
 				? this.plugin.priorityManager?.getPriorityConfig(priority)?.weight
 				: undefined
 		);
 
-		if (this.viewOptions.slotEventOverlap || !isTimeGridCalendarView(viewType)) {
-			return events;
-		}
-
-		return splitOverlappingCalendarEvents(events);
+		return visibleEvents;
 	}
 
 	private async buildPropertyBasedEvents(): Promise<EventInput[]> {
@@ -2238,16 +2219,6 @@ export class CalendarView extends BasesViewBase {
 			icsEvent,
 		} = info.event.extendedProps;
 
-		// Staircase segments represent only a slice of the original event, so the
-		// drop position is translated back to the original event range.
-		const staircaseMeta = readStaircaseSegmentMeta(info.event.extendedProps);
-		const dropStart = staircaseMeta
-			? resolveStaircaseDropStart(staircaseMeta, info.event.start)
-			: info.event.start;
-		const previousDropStart = staircaseMeta
-			? resolveStaircaseDropStart(staircaseMeta, info.oldEvent.start)
-			: info.oldEvent.start;
-
 		// Handle timeblock drops
 		if (eventType === "timeblock") {
 			if (!info.oldEvent.start) {
@@ -2360,8 +2331,8 @@ export class CalendarView extends BasesViewBase {
 			const plan = planTimeEntryDrop({
 				timeEntries: taskInfo.timeEntries,
 				timeEntryIndex: info.event.extendedProps.timeEntryIndex,
-				oldStart: previousDropStart,
-				newStart: dropStart,
+				oldStart: info.oldEvent.start,
+				newStart: info.event.start,
 				newEnd: info.event.end,
 			});
 			if (plan.kind === "revert") {
@@ -2395,21 +2366,7 @@ export class CalendarView extends BasesViewBase {
 			!isMaterializedOccurrenceTaskEvent &&
 			(isRecurringInstance || isNextScheduledOccurrence || isPatternInstance)
 		) {
-			await handleRecurringTaskDrop(
-				staircaseMeta && dropStart
-					? {
-							event: {
-								start: dropStart,
-								end: info.event.end,
-								allDay: info.event.allDay,
-								extendedProps: info.event.extendedProps,
-							},
-							revert: () => info.revert(),
-						}
-					: info,
-				taskInfo,
-				this.plugin
-			);
+			await handleRecurringTaskDrop(info, taskInfo, this.plugin);
 			return;
 		}
 
@@ -2419,8 +2376,8 @@ export class CalendarView extends BasesViewBase {
 				const plan = planTaskCalendarDrop({
 					eventType,
 					taskInfo,
-					newStart: dropStart,
-					oldStart: previousDropStart,
+					newStart: info.event.start,
+					oldStart: info.oldEvent.start,
 					allDay: info.event.allDay,
 				});
 				if (plan.kind === "revert") {
@@ -2477,33 +2434,13 @@ export class CalendarView extends BasesViewBase {
 		const { taskInfo, timeblock, eventType, filePath, timeEntryIndex, icsEvent } =
 			info.event.extendedProps;
 
-		// Staircase segments only expose the start resizer on the first segment and
-		// the end resizer on the last one, so a resize is mapped back to the full
-		// original event range.
-		const staircaseMeta = readStaircaseSegmentMeta(info.event.extendedProps);
-		const staircaseResize = staircaseMeta
-			? resolveStaircaseResizeRange(
-					staircaseMeta,
-					{ start: info.oldEvent.start, end: info.oldEvent.end },
-					{ start: info.event.start, end: info.event.end }
-				)
-			: null;
-
-		if (staircaseMeta && !staircaseResize) {
-			info.revert();
-			return;
-		}
-
-		const resizedStart = staircaseResize ? staircaseResize.start : info.event.start;
-		const resizedEnd = staircaseResize ? staircaseResize.end : info.event.end;
-
 		// Handle time entry resize
 		if (eventType === "timeEntry") {
 			const plan = planTimeEntryResize({
 				timeEntries: taskInfo.timeEntries,
 				timeEntryIndex,
-				newStart: resizedStart,
-				newEnd: resizedEnd,
+				newStart: info.event.start,
+				newEnd: info.event.end,
 			});
 			if (plan.kind === "revert") {
 				info.revert();
@@ -2614,8 +2551,8 @@ export class CalendarView extends BasesViewBase {
 
 		const plan = planTaskCalendarResize({
 			eventType,
-			start: resizedStart,
-			end: resizedEnd,
+			start: info.event.start,
+			end: info.event.end,
 			allDay: info.event.allDay,
 		});
 		if (plan.kind === "revert") {
@@ -2743,134 +2680,6 @@ export class CalendarView extends BasesViewBase {
 		}
 	}
 
-	private formatStaircaseEventRange(meta: StaircaseSegmentMeta): string {
-		const start = new Date(meta.originalStart);
-		const end = new Date(meta.originalEnd);
-		if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-			return "";
-		}
-
-		const pattern = this.viewOptions.timeFormat === "12" ? "h:mm a" : "HH:mm";
-		return `${format(start, pattern)} - ${format(end, pattern)}`;
-	}
-
-	/**
-	 * Decorate a staircase segment: mark it for styling and remove the resize
-	 * handles that belong to the middle of the original event, so only the real
-	 * start and end of the event stay resizable.
-	 */
-	private applyStaircaseSegmentElement(element: HTMLElement, extendedProps: unknown): void {
-		const meta = readStaircaseSegmentMeta(extendedProps);
-		if (!meta) {
-			return;
-		}
-
-		element.classList.add(TASKNOTES_STAIRCASE_SEGMENT_CLASS);
-		element.dataset.tnStaircaseTask = meta.originalId;
-		element.dataset.tnStaircaseSegment = String(meta.segmentIndex);
-		element.dataset.tnStaircaseSegments = String(meta.segmentCount);
-		element.dataset.tnStaircaseFirst = meta.isFirst ? "true" : "false";
-		element.dataset.tnStaircaseLast = meta.isLast ? "true" : "false";
-
-		// The first segment advertises the range of the whole event, not the range
-		// of its own slice. It is rendered from a data attribute through CSS so a
-		// FullCalendar re-render cannot duplicate or drop the text.
-		if (meta.isFirst) {
-			const rangeText = this.formatStaircaseEventRange(meta);
-			if (rangeText) {
-				element.dataset.tnEventRange = rangeText;
-			}
-		}
-
-		const trimResizers = () => {
-			if (!meta.isFirst) {
-				element
-					.querySelectorAll(".fc-event-resizer-start")
-					.forEach((resizer) => resizer.remove());
-			}
-
-			if (!meta.isLast) {
-				element
-					.querySelectorAll(".fc-event-resizer-end")
-					.forEach((resizer) => resizer.remove());
-			}
-		};
-
-		trimResizers();
-		// FullCalendar can attach the resize handles right after the mount callback.
-		element.ownerDocument.defaultView?.requestAnimationFrame(trimResizers);
-		// The outline notches need the widths of the sibling segments; all segments
-		// of one render batch are mounted by the time didMount runs, so measuring
-		// synchronously works, and the deferred pass covers late mounts.
-		this.syncStaircaseNotchLines(element);
-		element.ownerDocument.defaultView?.requestAnimationFrame(() => {
-			this.syncStaircaseNotchLines(element);
-		});
-	}
-
-	/**
-	 * Draw the horizontal "notch" lines that close the staircase outline.
-	 *
-	 * A segment that is narrower than the widest segment of the same task leaves a
-	 * gap in the outline where a neighbouring task sits. The top and/or bottom
-	 * edge of that gap is drawn by a pseudo element on the narrow segment, sized
-	 * from the measured segment rectangles.
-	 */
-	private syncStaircaseNotchLines(element: HTMLElement): void {
-		const taskId = element.dataset.tnStaircaseTask;
-		if (!taskId || !this.calendarEl) {
-			return;
-		}
-
-		const selector = `[data-tn-staircase-task="${CSS.escape(taskId)}"]`;
-		const segments = [
-			...this.calendarEl.querySelectorAll<HTMLElement>(selector),
-		].sort(
-			(a, b) =>
-				Number(a.dataset.tnStaircaseSegment ?? 0) - Number(b.dataset.tnStaircaseSegment ?? 0)
-		);
-		if (segments.length < 2) {
-			return;
-		}
-
-		const rects = segments.map((segment) => segment.getBoundingClientRect());
-
-		segments.forEach((segment, index) => {
-			const rect = rects[index];
-			const isNarrow = rect.width < Math.max(...rects.map((r) => r.width)) - 1;
-			if (!isNarrow) {
-				segment.classList.remove(
-					TASKNOTES_STAIRCASE_NOTCH_TOP_CLASS,
-					TASKNOTES_STAIRCASE_NOTCH_BOTTOM_CLASS
-				);
-				return;
-			}
-
-			const previous = index > 0 ? rects[index - 1] : null;
-			const next = index < rects.length - 1 ? rects[index + 1] : null;
-			const hasWiderAbove = previous ? previous.width > rect.width + 1 : false;
-			const hasWiderBelow = next ? next.width > rect.width + 1 : false;
-
-			segment.classList.toggle(TASKNOTES_STAIRCASE_NOTCH_TOP_CLASS, hasWiderAbove);
-			segment.classList.toggle(TASKNOTES_STAIRCASE_NOTCH_BOTTOM_CLASS, hasWiderBelow);
-
-			if (!hasWiderAbove && !hasWiderBelow) {
-				return;
-			}
-
-			const style = getComputedStyle(segment);
-			// The extension is stored as a percentage of the segment width so the
-			// notch lines keep tracking the outline across resizes.
-			const widest = Math.max(...rects.map((r) => r.width));
-			const extendRatio = (widest / rect.width - 1) * 100;
-			segment.style.setProperty("--tn-seg-extend", `${extendRatio.toFixed(2)}%`);
-			segment.style.setProperty("--tn-seg-line-color", style.borderLeftColor);
-			segment.style.setProperty("--tn-seg-btw", style.borderTopWidth);
-			segment.style.setProperty("--tn-seg-bbw", style.borderBottomWidth);
-			segment.style.setProperty("--tn-seg-brw", style.borderRightWidth);
-		});
-	}
-
 	private handleEventDidMount(arg: EventMountArg): void {
 		let extendedProps: EventMountArg["event"]["extendedProps"];
 		try {
@@ -2897,7 +2706,6 @@ export class CalendarView extends BasesViewBase {
 			isPatternInstance,
 		} = extendedProps;
 		suppressCalendarContextMenuOnMobile(arg.el);
-		this.applyStaircaseSegmentElement(arg.el, extendedProps);
 
 		const relatedNoteTotal = normalizeCalendarRelatedNoteCount(relatedNoteCount);
 		decorateCalendarIcsEventElement({

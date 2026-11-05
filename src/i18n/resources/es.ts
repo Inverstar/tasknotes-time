@@ -1636,7 +1636,7 @@ export const es: TranslationTree = {
 				},
 				sideBySideOverlap: {
 					name: "Mostrar tareas superpuestas en paralelo",
-					description: "Las tareas superpuestas se reparten en columnas de izquierda a derecha por prioridad y conservan todo el ancho fuera del solapamiento (diseño escalonado). Desactívalo para volver a dibujarlas unas sobre otras. La opción «Permitir superposición de eventos» de la vista sigue teniendo prioridad.",
+					description: "Las tareas superpuestas se colocan en paralelo por prioridad y mantienen ese ancho durante toda su duración. Desactívalo para volver a dibujarlas unas sobre otras. La opción «Permitir superposición de eventos» de la vista sigue teniendo prioridad.",
 				},
 				startTime: {
 					name: "Hora de inicio",

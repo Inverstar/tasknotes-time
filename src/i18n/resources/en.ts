@@ -1856,7 +1856,7 @@ export const en: TranslationTree = {
 				},
 				sideBySideOverlap: {
 					name: "Show overlapping tasks side by side",
-					description: "Overlapping timed tasks are placed side by side in priority order and keep full width outside the overlap (staircase layout). Disable this to draw them on top of each other again. The view option for allowing overlap still takes precedence.",
+					description: "Overlapping timed tasks are placed side by side in priority order and keep that width for their whole duration. Disable this to draw them on top of each other again. The view option for allowing overlap still takes precedence.",
 				},
 				startTime: {
 					name: "Start time",

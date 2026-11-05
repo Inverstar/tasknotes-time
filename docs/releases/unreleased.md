@@ -43,10 +43,10 @@ When a change has user-facing documentation, include a canonical tasknotes.dev l
 
 - Added a **Drag and drop resolution** setting under Settings → Appearance → Time settings. It controls how precisely dragged tasks and selected time ranges snap to the clock in every calendar view. Leave it empty to keep following the time slot duration, or enter `00:01:00` (or just `1`) for one-minute dragging without having to configure each view separately. A view's own *Drag and drop resolution* option still takes precedence when it is set.
 
-- Added a **Show overlapping tasks side by side** toggle under Settings → Appearance → Time settings. It turns the side-by-side/staircase layout on or off for all calendar views; a view's own *Allow events to overlap* option still takes precedence.
+- Added a **Show overlapping tasks side by side** toggle under Settings → Appearance → Time settings. It turns the side-by-side layout on or off for all calendar views; a view's own *Allow events to overlap* option still takes precedence.
 
 ## Changed
 
 - Overlapping timed tasks are now laid out side by side by default instead of being drawn on top of each other, and columns follow priority order from left to right (highest priority first).
 
-- Tasks that only partly overlap another task now use the full column width outside the overlapping range and an equal share of the width inside it, instead of being narrowed for their whole duration. Dragging and resizing a task still moves and resizes the whole task, not just the overlapping part.
+- Overlapping timed tasks keep the same shared column width for their whole duration, while tasks that do not overlap anything still use the full column width. Dragging and resizing still act on the whole task.

@@ -1626,7 +1626,7 @@ export const de: TranslationTree = {
 				},
 				sideBySideOverlap: {
 					name: "Überlappende Aufgaben nebeneinander anzeigen",
-					description: "Überlappende Aufgaben werden nach Priorität von links nach rechts auf Spalten verteilt und behalten außerhalb der Überlappung die volle Breite (Treppenlayout). Ausgeschaltet werden sie wieder übereinander gezeichnet. Die Option „Ereignisüberlappung zulassen“ der Ansicht hat weiterhin Vorrang.",
+					description: "Überlappende Aufgaben werden nach Priorität von links nach rechts nebeneinander angezeigt und behalten diese Breite während ihrer gesamten Dauer. Ausgeschaltet werden sie wieder übereinander gezeichnet. Die Option „Ereignisüberlappung zulassen“ der Ansicht hat weiterhin Vorrang.",
 				},
 				startTime: {
 					name: "Startzeit",
