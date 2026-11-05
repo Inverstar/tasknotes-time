@@ -139,6 +139,8 @@ type VirtualScrollerWithContainer = {
 
 type KanbanEphemeralState = {
 	scrollTop?: unknown;
+	boardScrollTop?: unknown;
+	boardScrollLeft?: unknown;
 	columnScroll?: unknown;
 };
 
@@ -267,6 +269,8 @@ export class KanbanView extends BasesViewBase {
 	private sortScopeCandidateTaskPaths = new Map<string, string[]>();
 	private containerListenersRegistered = false;
 	private columnScrollers = new Map<string, VirtualScroller<TaskInfo>>(); // columnKey -> scroller
+	private renderPromise: Promise<void> | null = null;
+	private renderRequested = false;
 	private expandedRelationshipFilterMode: TaskCardOptions["expandedRelationshipFilterMode"] =
 		"inherit";
 	private currentVisibleTaskPaths = new Set<string>();
@@ -391,18 +395,14 @@ export class KanbanView extends BasesViewBase {
 			this.debugLog("ON-DATA-UPDATED: normal render (no suppression active)");
 		}
 
-		const savedState = this.getEphemeralState();
-		try {
-			void this.render();
-		} catch (error) {
+		void this.render().catch((error: unknown) => {
 			tasknotesLogger.error(`[TaskNotes][${this.type}] Render error:`, {
 				category: "internal",
 				operation: "render-kanban-view",
 				error: error,
 			});
 			this.renderError(error as Error);
-		}
-		this.setEphemeralState(savedState);
+		});
 	}
 
 	/**
@@ -725,6 +725,8 @@ export class KanbanView extends BasesViewBase {
 		return {
 			...baseStateObject,
 			scrollTop: this.rootElement?.scrollTop || 0,
+			boardScrollTop: this.boardEl?.scrollTop || 0,
+			boardScrollLeft: this.boardEl?.scrollLeft || 0,
 			columnScroll,
 		};
 	}
@@ -734,73 +736,68 @@ export class KanbanView extends BasesViewBase {
 	 */
 	setEphemeralState(state: unknown): void {
 		if (!isKanbanEphemeralState(state)) return;
-		super.setEphemeralState(state);
 		const columnScroll = getColumnScrollState(state);
 
-		// Restore board-level horizontal scroll
-		if (typeof state.scrollTop === "number" && this.rootElement) {
-			const scrollTop = state.scrollTop;
-			window.requestAnimationFrame(() => {
-				if (this.rootElement && this.rootElement.isConnected) {
-					this.rootElement.scrollTop = scrollTop;
-				}
-			});
-		}
-
-		// Restore column scroll positions after render completes
+		// render() restores only after the replacement DOM is complete. Apply the
+		// positions before the next paint, without a stale animation-frame callback.
 		if (columnScroll) {
-			// Use requestAnimationFrame to ensure DOM and VirtualScrollers are ready
-			window.requestAnimationFrame(() => {
-				// Restore virtual scroller positions
-				for (const [columnKey, scroller] of this.columnScrollers) {
-					const scrollTop = columnScroll[columnKey];
-					if (scrollTop !== undefined) {
-						const scrollContainer = (
-							scroller as unknown as VirtualScrollerWithContainer
-						).scrollContainer;
-						if (scrollContainer) {
-							scrollContainer.scrollTop = scrollTop;
-						}
+			// Restore virtual scroller positions
+			for (const [columnKey, scroller] of this.columnScrollers) {
+				const scrollTop = columnScroll[columnKey];
+				if (scrollTop !== undefined) {
+					const scrollContainer = (scroller as unknown as VirtualScrollerWithContainer)
+						.scrollContainer;
+					if (scrollContainer) {
+						scrollContainer.scrollTop = scrollTop;
 					}
 				}
+			}
 
-				// Restore non-virtual column positions
-				if (this.boardEl) {
-					const columns = this.boardEl.querySelectorAll(".kanban-view__column");
-					columns.forEach((column) => {
-						const groupKey = column.getAttribute("data-group");
-						if (groupKey && columnScroll[groupKey] !== undefined) {
-							const cardsContainer = column.querySelector(
-								".kanban-view__cards"
+			// Restore non-virtual column positions
+			if (this.boardEl) {
+				const columns = this.boardEl.querySelectorAll(".kanban-view__column");
+				columns.forEach((column) => {
+					const groupKey = column.getAttribute("data-group");
+					if (groupKey && columnScroll[groupKey] !== undefined) {
+						const cardsContainer = column.querySelector(
+							".kanban-view__cards"
+						) as HTMLElement;
+						if (cardsContainer && !this.columnScrollers.has(groupKey)) {
+							cardsContainer.scrollTop = columnScroll[groupKey];
+						}
+					}
+				});
+
+				// Restore swimlane cell positions (class is kanban-view__swimlane-column)
+				const swimlaneCells = this.boardEl.querySelectorAll(
+					".kanban-view__swimlane-column"
+				);
+				swimlaneCells.forEach((cell) => {
+					const columnKey = cell.getAttribute("data-column");
+					const swimlaneKey = cell.getAttribute("data-swimlane");
+					if (columnKey && swimlaneKey) {
+						const cellKey = `${swimlaneKey}:${columnKey}`;
+						if (columnScroll[cellKey] !== undefined) {
+							const tasksContainer = cell.querySelector(
+								".kanban-view__tasks-container"
 							) as HTMLElement;
-							if (cardsContainer && !this.columnScrollers.has(groupKey)) {
-								cardsContainer.scrollTop = columnScroll[groupKey];
+							if (tasksContainer && !this.columnScrollers.has(cellKey)) {
+								tasksContainer.scrollTop = columnScroll[cellKey];
 							}
 						}
-					});
-
-					// Restore swimlane cell positions (class is kanban-view__swimlane-column)
-					const swimlaneCells = this.boardEl.querySelectorAll(
-						".kanban-view__swimlane-column"
-					);
-					swimlaneCells.forEach((cell) => {
-						const columnKey = cell.getAttribute("data-column");
-						const swimlaneKey = cell.getAttribute("data-swimlane");
-						if (columnKey && swimlaneKey) {
-							const cellKey = `${swimlaneKey}:${columnKey}`;
-							if (columnScroll[cellKey] !== undefined) {
-								const tasksContainer = cell.querySelector(
-									".kanban-view__tasks-container"
-								) as HTMLElement;
-								if (tasksContainer && !this.columnScrollers.has(cellKey)) {
-									tasksContainer.scrollTop = columnScroll[cellKey];
-								}
-							}
-						}
-					});
-				}
-			});
+					}
+				});
+			}
 		}
+		if (this.boardEl) {
+			if (typeof state.boardScrollTop === "number") {
+				this.boardEl.scrollTop = state.boardScrollTop;
+			}
+			if (typeof state.boardScrollLeft === "number") {
+				this.boardEl.scrollLeft = state.boardScrollLeft;
+			}
+		}
+		super.setEphemeralState(state);
 	}
 
 	private placeGoalPanel(host: HTMLElement, state: GoalStripState): void {
@@ -849,7 +846,26 @@ export class KanbanView extends BasesViewBase {
 		}
 	}
 
-	async render(): Promise<void> {
+	render(): Promise<void> {
+		this.renderRequested = true;
+		if (!this.renderPromise) {
+			// A task edit can notify both Bases and the task cache. Finish rebuilding
+			// and restoring the current board before reading scroll for another pass.
+			this.renderPromise = Promise.resolve().then(async () => {
+				try {
+					while (this.renderRequested) {
+						this.renderRequested = false;
+						await this.renderBoard();
+					}
+				} finally {
+					this.renderPromise = null;
+				}
+			});
+		}
+		return this.renderPromise;
+	}
+
+	private async renderBoard(): Promise<void> {
 		if (!this.boardEl || !this.rootElement) return;
 		if (!this.data?.data) return;
 
@@ -872,6 +888,7 @@ export class KanbanView extends BasesViewBase {
 			this.setupTimeFilterControls();
 		}
 
+		let savedState: unknown;
 		try {
 			const dataItems = this.dataAdapter.extractDataItems().filter(hasFixedTaskIdentity);
 
@@ -919,6 +936,9 @@ export class KanbanView extends BasesViewBase {
 					await this.plugin.activateGoalsView(path);
 				},
 			});
+			// Read the live position immediately before changing the DOM: task/goal
+			// loading can take long enough for the user to scroll further meanwhile.
+			savedState = this.getEphemeralState();
 			this.mountGoalPanel(goalPanelHost);
 
 			const timeFilteredTasks = filterKanbanTasksByTime(
@@ -989,6 +1009,8 @@ export class KanbanView extends BasesViewBase {
 				error: error,
 			});
 			this.renderError(error instanceof Error ? error : new Error(String(error)));
+		} finally {
+			if (savedState) this.setEphemeralState(savedState);
 		}
 	}
 
@@ -4561,8 +4583,8 @@ export class KanbanView extends BasesViewBase {
 	}
 
 	/**
-	 * Override debouncedRefresh to preserve scroll positions during re-renders.
-	 * Saves ephemeral state before render and restores it after.
+	 * Coalesce task updates. render() preserves the live scroll position when
+	 * replacing the board, rather than capturing it before this debounce delay.
 	 */
 	protected debouncedRefresh(): void {
 		if (this.updateDebounceTimer) {
@@ -4574,9 +4596,6 @@ export class KanbanView extends BasesViewBase {
 			activeDropCount: this.activeDropCount,
 			suppressRenderRemaining: Math.max(0, this.suppressRenderUntil - Date.now()),
 		});
-
-		// Save current scroll state before the timer fires
-		const savedState = this.getEphemeralState();
 
 		// Use correct window for pop-out window support
 		const win = this.containerEl.ownerDocument.defaultView || window;
@@ -4599,8 +4618,6 @@ export class KanbanView extends BasesViewBase {
 				});
 				await this.render();
 				this.updateDebounceTimer = null;
-				// Restore scroll state after render completes
-				this.setEphemeralState(savedState);
 			})();
 		}, 150);
 	}
