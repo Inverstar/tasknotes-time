@@ -520,13 +520,12 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
     text-overflow: ellipsis;
 }
 
-/* End-of-day label appended to the time axis (FullCalendar only labels slots).
-   It is positioned against the axis chunk in day views and against the last axis
-   cell in week views. */
-#bases-calendar .tasknotes-calendar-axis-end-label {
+/* Start-of-range label sits at the top of the axis. It never adds a row or
+   changes the scroll area. */
+#bases-calendar .tasknotes-calendar-axis-start-label {
     position: absolute;
     inset-inline-end: 0;
-    bottom: calc(0px - var(--tn-axis-end-extra, 0px));
+    top: 0;
     padding: 0 4px;
     color: inherit;
     line-height: 1.2;
@@ -535,7 +534,7 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
     font-size: var(--fc-small-font-size, 11px);
 }
 
-#bases-calendar .tasknotes-calendar-axis-end-host {
+#bases-calendar .tasknotes-calendar-axis-start-host {
     position: relative;
 }
 

@@ -1,7 +1,7 @@
 import {
-	applyCalendarAxisEndLabel,
-	CALENDAR_AXIS_END_HOST_CLASS,
-	CALENDAR_AXIS_END_LABEL_CLASS,
+	applyCalendarAxisStartLabel,
+	CALENDAR_AXIS_START_HOST_CLASS,
+	CALENDAR_AXIS_START_LABEL_CLASS,
 	formatCalendarAxisBoundaryLabel,
 	isCalendarTimeGridView,
 	parseCalendarTimeToMinutes,
@@ -35,188 +35,96 @@ describe("calendar time axis boundary labels", () => {
 	});
 });
 
-describe("applyCalendarAxisEndLabel", () => {
-	function createCalendarEl(): HTMLElement {
+describe("applyCalendarAxisStartLabel", () => {
+	function createCalendarEl(firstLabel = "08:00", withScroller = false): HTMLElement {
 		const calendarEl = document.createElement("div");
-		calendarEl.innerHTML = `
+		const axis = `
 			<div class="fc-timegrid-axis-chunk">
-				<table><tbody><tr><td class="fc-timegrid-slot-label"><div class="fc-timegrid-slot-label-cushion">23:00</div></td></tr></tbody></table>
+				<table><tbody><tr><td class="fc-timegrid-slot-label">
+					<div class="fc-timegrid-slot-label-cushion">${firstLabel}</div>
+				</td></tr></tbody></table>
 			</div>
 		`;
+		calendarEl.innerHTML = withScroller
+			? `<div class="fc-scroller">${axis}</div>`
+			: axis;
 		return calendarEl;
 	}
 
-	it("appends the end-of-day label to the time axis", () => {
-		const calendarEl = createCalendarEl();
-
-		applyCalendarAxisEndLabel({
+	function apply(
+		calendarEl: HTMLElement,
+		slotMinTime = "08:00:00",
+		viewType = "timeGridWeek"
+	): void {
+		applyCalendarAxisStartLabel({
 			calendarEl,
-			viewType: "timeGridWeek",
-			slotMaxTime: "24:00:00",
+			viewType,
+			slotMinTime,
 			timeFormat: "24",
 		});
+	}
 
-		const label = calendarEl.querySelector<HTMLElement>(`.${CALENDAR_AXIS_END_LABEL_CLASS}`);
-		expect(label).not.toBeNull();
-		expect(label?.textContent).toBe("24:00");
-		expect(label?.parentElement?.classList.contains("fc-timegrid-axis-chunk")).toBe(true);
+	it("does not duplicate the label when FullCalendar already shows the start time", () => {
+		const calendarEl = createCalendarEl("08:00");
+
+		apply(calendarEl);
+
+		expect(calendarEl.querySelector(`.${CALENDAR_AXIS_START_LABEL_CLASS}`)).toBeNull();
+	});
+
+	it("adds the start label when the first native label is a later time", () => {
+		const calendarEl = createCalendarEl("09:00");
+
+		apply(calendarEl, "08:10:00");
+
+		const label = calendarEl.querySelector<HTMLElement>(
+			`.${CALENDAR_AXIS_START_LABEL_CLASS}`
+		);
+		expect(label?.textContent).toBe("08:10");
+		expect(label?.parentElement?.classList.contains(CALENDAR_AXIS_START_HOST_CLASS)).toBe(
+			true
+		);
+	});
+
+	it("does not add a row or grow the scroll area", () => {
+		const calendarEl = createCalendarEl("09:00", true);
+
+		apply(calendarEl, "08:10:00");
+
+		const label = calendarEl.querySelector<HTMLElement>(
+			`.${CALENDAR_AXIS_START_LABEL_CLASS}`
+		);
+		const scroller = calendarEl.querySelector<HTMLElement>(".fc-scroller");
+		expect(scroller?.style.paddingBottom).toBe("");
+		expect(label?.style.getPropertyValue("--tn-axis-end-extra")).toBe("");
+		expect(calendarEl.querySelector(".tasknotes-calendar-axis-end-label")).toBeNull();
 	});
 
 	it("replaces a previously injected label instead of duplicating it", () => {
-		const calendarEl = createCalendarEl();
+		const calendarEl = createCalendarEl("09:00");
 
-		applyCalendarAxisEndLabel({
-			calendarEl,
-			viewType: "timeGridWeek",
-			slotMaxTime: "24:00:00",
-			timeFormat: "24",
-		});
-		applyCalendarAxisEndLabel({
-			calendarEl,
-			viewType: "timeGridWeek",
-			slotMaxTime: "22:00:00",
-			timeFormat: "24",
-		});
+		apply(calendarEl, "08:10:00");
+		apply(calendarEl, "08:20:00");
 
-		const labels = calendarEl.querySelectorAll(`.${CALENDAR_AXIS_END_LABEL_CLASS}`);
+		const labels = calendarEl.querySelectorAll(`.${CALENDAR_AXIS_START_LABEL_CLASS}`);
 		expect(labels).toHaveLength(1);
-		expect(labels[0].textContent).toBe("22:00");
-	});
-
-	it("anchors the label to the spanning axis column in week views", () => {
-		const calendarEl = document.createElement("div");
-		calendarEl.innerHTML = `
-			<table>
-				<thead><tr><th class="fc-timegrid-axis fc-scrollgrid-shrink">W 45</th></tr></thead>
-				<tbody>
-					<tr>
-						<td class="fc-timegrid-col fc-timegrid-axis">
-							<div class="fc-timegrid-slot-label">23:45</div>
-						</td>
-						<td class="fc-timegrid-col"></td>
-					</tr>
-				</tbody>
-			</table>
-		`;
-
-		applyCalendarAxisEndLabel({
-			calendarEl,
-			viewType: "timeGridWeek",
-			slotMaxTime: "24:00:00",
-			timeFormat: "24",
-		});
-
-		const label = calendarEl.querySelector<HTMLElement>(`.${CALENDAR_AXIS_END_LABEL_CLASS}`);
-		const axisColumn = calendarEl.querySelector<HTMLElement>(".fc-timegrid-axis.fc-timegrid-col");
-
-		expect(label?.textContent).toBe("24:00");
-		expect(label?.parentElement).toBe(axisColumn);
-		expect(axisColumn?.classList.contains(CALENDAR_AXIS_END_HOST_CLASS)).toBe(true);
-	});
-
-	it("falls back to the last axis cell when no spanning column exists", () => {
-		const calendarEl = document.createElement("div");
-		calendarEl.innerHTML = `
-			<div class="fc-timegrid-slots">
-				<table><tbody>
-					<tr><td class="fc-timegrid-axis">23:45</td></tr>
-					<tr><td class="fc-timegrid-axis">24:00</td></tr>
-				</tbody></table>
-			</div>
-		`;
-
-		applyCalendarAxisEndLabel({
-			calendarEl,
-			viewType: "timeGridDay",
-			slotMaxTime: "24:00:00",
-			timeFormat: "24",
-		});
-
-		const label = calendarEl.querySelector<HTMLElement>(`.${CALENDAR_AXIS_END_LABEL_CLASS}`);
-		const axisCells = calendarEl.querySelectorAll<HTMLElement>(".fc-timegrid-axis");
-
-		expect(label?.parentElement).toBe(axisCells[axisCells.length - 1]);
-	});
-
-	it("reserves an extra axis row so the end label follows the label rhythm", () => {
-		const calendarEl = document.createElement("div");
-		calendarEl.innerHTML = `
-			<div class="fc-scroller">
-				<div class="fc-timegrid-axis-chunk">
-					<table><tbody><tr><td class="fc-timegrid-slot-label">
-						<div class="fc-timegrid-slot-label-cushion">23:00</div>
-						<div class="fc-timegrid-slot-label-cushion">23:30</div>
-					</td></tr></tbody></table>
-				</div>
-			</div>
-		`;
-
-		const rectSpy = jest
-			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
-			.mockImplementation(function (this: HTMLElement) {
-				let top = 0;
-				if (this.classList.contains(CALENDAR_AXIS_END_LABEL_CLASS)) {
-					top = 140;
-				} else if (this.textContent?.trim() === "23:00") {
-					top = 100;
-				} else if (this.textContent?.trim() === "23:30") {
-					top = 129;
-				}
-				return {
-					top,
-					bottom: top + 15,
-					height: 15,
-					left: 0,
-					right: 20,
-					width: 20,
-					x: 0,
-					y: top,
-					toJSON: () => ({}),
-				} as DOMRect;
-			});
-
-		try {
-			applyCalendarAxisEndLabel({
-				calendarEl,
-				viewType: "timeGridWeek",
-				slotMaxTime: "24:00:00",
-				timeFormat: "24",
-			});
-
-			const label = calendarEl.querySelector<HTMLElement>(
-				`.${CALENDAR_AXIS_END_LABEL_CLASS}`
-			);
-			// 23:00 at 100, 23:30 at 129 (gap 29), so 24:00 belongs at 158; it
-			// starts at 140 and needs 18px of extra axis height.
-			expect(label?.style.getPropertyValue("--tn-axis-end-extra")).toBe("18px");
-			expect(
-				calendarEl.querySelector<HTMLElement>(".fc-scroller")?.style.paddingBottom
-			).toBe("18px");
-			expect(label?.textContent).toBe("24:00");
-			expect(
-				calendarEl.querySelectorAll(".fc-timegrid-slot-label-cushion").length
-			).toBe(3);
-		} finally {
-			rectSpy.mockRestore();
-		}
+		expect(labels[0].textContent).toBe("08:20");
 	});
 
 	it("removes the label for non time-grid views", () => {
-		const calendarEl = createCalendarEl();
+		const calendarEl = createCalendarEl("09:00");
 
-		applyCalendarAxisEndLabel({
-			calendarEl,
-			viewType: "timeGridWeek",
-			slotMaxTime: "24:00:00",
-			timeFormat: "24",
-		});
-		applyCalendarAxisEndLabel({
-			calendarEl,
-			viewType: "dayGridMonth",
-			slotMaxTime: "24:00:00",
-			timeFormat: "24",
-		});
+		apply(calendarEl, "08:10:00");
+		apply(calendarEl, "08:10:00", "dayGridMonth");
 
-		expect(calendarEl.querySelector(`.${CALENDAR_AXIS_END_LABEL_CLASS}`)).toBeNull();
+		expect(calendarEl.querySelector(`.${CALENDAR_AXIS_START_LABEL_CLASS}`)).toBeNull();
+	});
+
+	it("ignores invalid start times", () => {
+		const calendarEl = createCalendarEl("09:00");
+
+		apply(calendarEl, "not-a-time");
+
+		expect(calendarEl.querySelector(`.${CALENDAR_AXIS_START_LABEL_CLASS}`)).toBeNull();
 	});
 });

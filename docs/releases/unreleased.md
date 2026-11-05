@@ -39,7 +39,7 @@ When a change has user-facing documentation, include a canonical tasknotes.dev l
 
 - Added a **Time slot height** setting (5–60 px, default 24) under Settings → Appearance → Time settings, and a matching *Time slot height (px)* slider in each calendar view's options. It sets the real rendered height of the time-grid rows, so a 15-minute grid can be made as compact as a 30-minute one instead of needing a long scroll.
 
-- The time axis now shows the end of the configured range. With a day ending at `24:00` the axis ends with a `24:00` label, and ranges past midnight (`25:00`, `26:00`) keep that notation instead of wrapping to `00:00` / `02:00`.
+- The time axis always shows the configured start time at the top. When that time does not fall on one of FullCalendar's label intervals, the missing label is added at the top of the axis without adding a row or extending the scroll area. No end-of-range label is added.
 
 - Added a **Drag and drop resolution** setting under Settings → Appearance → Time settings. It controls how precisely dragged tasks and selected time ranges snap to the clock in every calendar view. Leave it empty to keep following the time slot duration, or enter `00:01:00` (or just `1`) for one-minute dragging without having to configure each view separately. A view's own *Drag and drop resolution* option still takes precedence when it is set.
 

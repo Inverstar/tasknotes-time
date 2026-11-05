@@ -95,7 +95,7 @@ import {
 	CALENDAR_SLOT_HEIGHT_DEFAULT,
 	normalizeCalendarSlotHeight,
 } from "./calendarSlotHeight";
-import { applyCalendarAxisEndLabel } from "./calendarTimeAxisLabels";
+import { applyCalendarAxisStartLabel } from "./calendarTimeAxisLabels";
 import {
 	applyCalendarEventPriorityRanks,
 	resolveStaircaseDropStart,
@@ -1612,20 +1612,20 @@ export class CalendarView extends BasesViewBase {
 
 	/**
 	 * Apply time-grid specific presentation that FullCalendar does not expose as
-	 * an option: the rendered slot height and the time-axis end label.
+	 * an option: the rendered slot height and the time-axis start label.
 	 */
 	private applyTimeGridAppearance(): void {
 		applyCalendarSlotHeight(this.calendarEl, this.viewOptions.slotHeight);
-		this.applyTimeAxisEndLabel();
+		this.applyTimeAxisStartLabel();
 	}
 
-	private applyTimeAxisEndLabel(): void {
+	private applyTimeAxisStartLabel(): void {
 		if (!this.calendarEl) return;
 
-		applyCalendarAxisEndLabel({
+		applyCalendarAxisStartLabel({
 			calendarEl: this.calendarEl,
 			viewType: this.calendar?.view?.type ?? this.viewOptions.calendarView,
-			slotMaxTime: this.viewOptions.slotMaxTime,
+			slotMinTime: this.viewOptions.slotMinTime,
 			timeFormat: this.viewOptions.timeFormat,
 			locale: this.viewOptions.locale,
 		});
