@@ -536,6 +536,11 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
     position: relative;
 }
 
+/* The last native axis label is hidden when it would collide with the end label. */
+#bases-calendar .tasknotes-calendar-axis-label-suppressed {
+    visibility: hidden;
+}
+
 /* Responsive design for Bases views */
 @media (max-width: 768px) {
     .tn-bases-kanban-board {

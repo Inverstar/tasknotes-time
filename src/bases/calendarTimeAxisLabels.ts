@@ -9,6 +9,11 @@
 
 export const CALENDAR_AXIS_END_LABEL_CLASS = "tasknotes-calendar-axis-end-label";
 export const CALENDAR_AXIS_END_HOST_CLASS = "tasknotes-calendar-axis-end-host";
+export const CALENDAR_AXIS_LABEL_SUPPRESSED_CLASS =
+	"tasknotes-calendar-axis-label-suppressed";
+
+/** Minimum overlap (px) before a native axis label is hidden to make room for the end label. */
+const AXIS_END_LABEL_OVERLAP_THRESHOLD = 4;
 
 /**
  * Parse a `HH:MM(:SS)` value into minutes from midnight. Values above 24:00 are
@@ -114,6 +119,9 @@ export function applyCalendarAxisEndLabel(options: {
 	calendarEl
 		.querySelectorAll<HTMLElement>(`.${CALENDAR_AXIS_END_LABEL_CLASS}`)
 		.forEach((element) => element.remove());
+	calendarEl
+		.querySelectorAll<HTMLElement>(`.${CALENDAR_AXIS_LABEL_SUPPRESSED_CLASS}`)
+		.forEach((element) => element.classList.remove(CALENDAR_AXIS_LABEL_SUPPRESSED_CLASS));
 
 	if (!isCalendarTimeGridView(viewType)) {
 		return;
@@ -139,4 +147,51 @@ export function applyCalendarAxisEndLabel(options: {
 	labelEl.dataset.tnAxisBoundary = "end";
 	labelEl.textContent = formatCalendarAxisBoundaryLabel(maxMinutes, timeFormat, locale);
 	host.appendChild(labelEl);
+
+	// With short slots FullCalendar labels the axis more often (30 minutes for a
+	// 15-minute grid) while the end label sits on the bottom edge of the grid.
+	// The last native label can then overlap it; hide that one label so the axis
+	// ends with a readable "...23:00, 24:00" instead of two colliding labels.
+	// FullCalendar may render the native labels after this call, so the check is
+	// repeated on the next frame and once more after the render settles.
+	const suppressCollidingLabel = () => {
+		if (!labelEl.parentElement) {
+			return;
+		}
+
+		const nativeLabels = [
+			...calendarEl.querySelectorAll<HTMLElement>(".fc-timegrid-slot-label-cushion"),
+		]
+			.filter((element) => !element.classList.contains(CALENDAR_AXIS_END_LABEL_CLASS))
+			.map((element) => ({ element, rect: element.getBoundingClientRect() }))
+			.filter((entry) => entry.rect.top > 0)
+			.sort((a, b) => a.rect.top - b.rect.top);
+
+		const lastNative = nativeLabels[nativeLabels.length - 1];
+		if (!lastNative) {
+			return;
+		}
+
+		// The label frame is collapsed to zero height to keep tiny slot rows
+		// uniform, so its rectangle may have no height; fall back to the text's
+		// line height when measuring how far the label extends.
+		const lineHeight =
+			Number.parseFloat(getComputedStyle(lastNative.element).lineHeight) || 15;
+		const labelBottom = Math.max(
+			lastNative.rect.bottom,
+			lastNative.rect.top + lineHeight
+		);
+
+		if (
+			labelBottom - labelEl.getBoundingClientRect().top >
+			AXIS_END_LABEL_OVERLAP_THRESHOLD
+		) {
+			lastNative.element.classList.add(CALENDAR_AXIS_LABEL_SUPPRESSED_CLASS);
+		}
+	};
+
+	suppressCollidingLabel();
+	const view = calendarEl.ownerDocument.defaultView;
+	view?.requestAnimationFrame(suppressCollidingLabel);
+	view?.setTimeout(suppressCollidingLabel, 120);
 }

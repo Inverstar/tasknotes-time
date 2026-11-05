@@ -2,6 +2,7 @@ import {
 	applyCalendarAxisEndLabel,
 	CALENDAR_AXIS_END_HOST_CLASS,
 	CALENDAR_AXIS_END_LABEL_CLASS,
+	CALENDAR_AXIS_LABEL_SUPPRESSED_CLASS,
 	formatCalendarAxisBoundaryLabel,
 	isCalendarTimeGridView,
 	parseCalendarTimeToMinutes,
@@ -40,7 +41,7 @@ describe("applyCalendarAxisEndLabel", () => {
 		const calendarEl = document.createElement("div");
 		calendarEl.innerHTML = `
 			<div class="fc-timegrid-axis-chunk">
-				<table><tbody><tr><td class="fc-timegrid-slot-label">23:00</td></tr></tbody></table>
+				<table><tbody><tr><td class="fc-timegrid-slot-label"><div class="fc-timegrid-slot-label-cushion">23:00</div></td></tr></tbody></table>
 			</div>
 		`;
 		return calendarEl;
@@ -136,6 +137,84 @@ describe("applyCalendarAxisEndLabel", () => {
 		const axisCells = calendarEl.querySelectorAll<HTMLElement>(".fc-timegrid-axis");
 
 		expect(label?.parentElement).toBe(axisCells[axisCells.length - 1]);
+	});
+
+	it("hides the last native label when it overlaps the end label", () => {
+		const calendarEl = createCalendarEl();
+		const rect = (top: number, bottom: number) =>
+			({
+				top,
+				bottom,
+				height: bottom - top,
+				left: 0,
+				right: 20,
+				width: 20,
+				x: 0,
+				y: top,
+				toJSON: () => ({}),
+			}) as DOMRect;
+
+		const rectSpy = jest
+			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+			.mockImplementation(function (this: HTMLElement) {
+				if (this.classList.contains(CALENDAR_AXIS_END_LABEL_CLASS)) {
+					return rect(140, 155);
+				}
+				return this.classList.contains("fc-timegrid-slot-label-cushion")
+					? rect(130, 145)
+					: rect(0, 0);
+			});
+
+		try {
+			applyCalendarAxisEndLabel({
+				calendarEl,
+				viewType: "timeGridWeek",
+				slotMaxTime: "24:00:00",
+				timeFormat: "24",
+			});
+
+			expect(
+				calendarEl.querySelector(`.${CALENDAR_AXIS_LABEL_SUPPRESSED_CLASS}`)
+			).not.toBeNull();
+		} finally {
+			rectSpy.mockRestore();
+		}
+	});
+
+	it("keeps the last native label when there is no overlap", () => {
+		const calendarEl = createCalendarEl();
+		const rectSpy = jest
+			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+			.mockImplementation(function (this: HTMLElement) {
+				const height = 15;
+				const top = this.classList.contains(CALENDAR_AXIS_END_LABEL_CLASS) ? 160 : 130;
+				return {
+					top,
+					bottom: top + height,
+					height,
+					left: 0,
+					right: 20,
+					width: 20,
+					x: 0,
+					y: top,
+					toJSON: () => ({}),
+				} as DOMRect;
+			});
+
+		try {
+			applyCalendarAxisEndLabel({
+				calendarEl,
+				viewType: "timeGridWeek",
+				slotMaxTime: "24:00:00",
+				timeFormat: "24",
+			});
+
+			expect(
+				calendarEl.querySelector(`.${CALENDAR_AXIS_LABEL_SUPPRESSED_CLASS}`)
+			).toBeNull();
+		} finally {
+			rectSpy.mockRestore();
+		}
 	});
 
 	it("removes the label for non time-grid views", () => {
