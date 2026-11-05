@@ -702,6 +702,20 @@ export function renderAppearanceTab(
 			);
 
 			group.addSetting((setting) =>
+				void configureToggleSetting(setting, {
+					name: translate("settings.appearance.timeSettings.sideBySideOverlap.name"),
+					desc: translate(
+						"settings.appearance.timeSettings.sideBySideOverlap.description"
+					),
+					getValue: () => !plugin.settings.calendarViewSettings.slotEventOverlap,
+					setValue: async (value: boolean) => {
+						plugin.settings.calendarViewSettings.slotEventOverlap = !value;
+						save();
+					},
+				})
+			);
+
+			group.addSetting((setting) =>
 				void configureNumberSetting(setting, {
 					name: translate("settings.appearance.timeSettings.eventMinHeight.name"),
 					desc: translate("settings.appearance.timeSettings.eventMinHeight.description"),

@@ -1794,6 +1794,10 @@ export const zh: TranslationTree = {
 					description: "拖动任务与框选时间时吸附到时间刻度的精度，作用于所有日历视图。留空则跟随「时间段持续时间」；填 00:01:00（或 1）可做到 1 分钟吸附。",
 					placeholder: "分钟或 HH:mm:ss（例如：00:01:00）",
 				},
+				sideBySideOverlap: {
+					name: "重叠任务并排显示",
+					description: "开启后，重叠的定时任务按优先级从左到右并排，非重叠部分占满整列宽度（阶梯布局）；关闭则恢复互相压着绘制。视图选项中的「允许事件重叠」仍可单独覆盖。",
+				},
 				startTime: {
 					name: "开始时间",
 					description: "时间线视图中显示的最早时间（HH:MM格式）",

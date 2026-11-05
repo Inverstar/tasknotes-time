@@ -1638,6 +1638,10 @@ export const fr: TranslationTree = {
 					description: "Précision à laquelle les tâches déplacées et les plages sélectionnées s'alignent sur l'heure dans toutes les vues du calendrier. Laissez vide pour suivre la durée des créneaux ; saisissez 00:01:00 (ou 1) pour un alignement à la minute.",
 					placeholder: "Minutes ou HH:mm:ss (ex. 00:01:00)",
 				},
+				sideBySideOverlap: {
+					name: "Afficher les tâches superposées côte à côte",
+					description: "Les tâches superposées se répartissent en colonnes de gauche à droite par priorité et gardent toute la largeur hors de la zone de chevauchement (disposition en escalier). Désactivez cette option pour les superposer à nouveau. L'option « Autoriser le chevauchement des événements » de la vue reste prioritaire.",
+				},
 				startTime: {
 					name: "Heure de début",
 					description:

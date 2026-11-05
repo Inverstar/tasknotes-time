@@ -1634,6 +1634,10 @@ export const es: TranslationTree = {
 					description: "Precisión con la que las tareas arrastradas y los rangos seleccionados se ajustan al reloj en todas las vistas de calendario. Déjalo vacío para seguir la duración del intervalo; usa 00:01:00 (o 1) para ajustes de un minuto.",
 					placeholder: "Minutos o HH:mm:ss (p. ej. 00:01:00)",
 				},
+				sideBySideOverlap: {
+					name: "Mostrar tareas superpuestas en paralelo",
+					description: "Las tareas superpuestas se reparten en columnas de izquierda a derecha por prioridad y conservan todo el ancho fuera del solapamiento (diseño escalonado). Desactívalo para volver a dibujarlas unas sobre otras. La opción «Permitir superposición de eventos» de la vista sigue teniendo prioridad.",
+				},
 				startTime: {
 					name: "Hora de inicio",
 					description:

@@ -1854,6 +1854,10 @@ export const en: TranslationTree = {
 					description: "How precisely dragged tasks and selected times snap to the clock in every calendar view. Leave empty to follow the time slot duration; enter 00:01:00 (or 1) for one-minute snapping.",
 					placeholder: "Minutes or HH:mm:ss (e.g. 00:01:00)",
 				},
+				sideBySideOverlap: {
+					name: "Show overlapping tasks side by side",
+					description: "Overlapping timed tasks are placed side by side in priority order and keep full width outside the overlap (staircase layout). Disable this to draw them on top of each other again. The view option for allowing overlap still takes precedence.",
+				},
 				startTime: {
 					name: "Start time",
 					description: "Earliest time shown in timeline views (HH:MM format)",

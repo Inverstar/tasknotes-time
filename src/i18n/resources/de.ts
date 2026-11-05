@@ -1624,6 +1624,10 @@ export const de: TranslationTree = {
 					description: "Legt fest, auf welche Zeitstufen gezogene Aufgaben und ausgewählte Zeiträume in allen Kalenderansichten einrasten. Leer lassen, um der Zeitfensterdauer zu folgen; 00:01:00 (oder 1) ergibt Minutenschritte.",
 					placeholder: "Minuten oder HH:mm:ss (z. B. 00:01:00)",
 				},
+				sideBySideOverlap: {
+					name: "Überlappende Aufgaben nebeneinander anzeigen",
+					description: "Überlappende Aufgaben werden nach Priorität von links nach rechts auf Spalten verteilt und behalten außerhalb der Überlappung die volle Breite (Treppenlayout). Ausgeschaltet werden sie wieder übereinander gezeichnet. Die Option „Ereignisüberlappung zulassen“ der Ansicht hat weiterhin Vorrang.",
+				},
 				startTime: {
 					name: "Startzeit",
 					description: "Früheste Zeit in Timeline-Ansichten (HH:MM Format)",

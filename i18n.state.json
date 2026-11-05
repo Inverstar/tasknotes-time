@@ -3918,6 +3918,14 @@
       "source": "fc64db0c3d78dabaa46b8667a964a9fde88216d0",
       "translation": "5ecdfa6cda1bc3d26a264b593028c5d685793f27"
     },
+    "settings.appearance.timeSettings.sideBySideOverlap.name": {
+      "source": "695f7117c77d372c24254fff0abe91a1829e6b29",
+      "translation": "55c3d91f4c796df6db843c2f5f2f687ba8c176e4"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.description": {
+      "source": "a9e2f2a7f08510bb66d971ae37d7db56420de579",
+      "translation": "e281594687ea5d588f74f903e0826192836aeb90"
+    },
     "settings.appearance.timeSettings.startTime.name": {
       "source": "88d8206d586abe4c8e35c8e9adcc649d07c99a1e",
       "translation": "4aa533c84189a4c82a1a07bfdac1895974ad6d28"
@@ -13265,6 +13273,14 @@
     "settings.appearance.timeSettings.snapDuration.placeholder": {
       "source": "fc64db0c3d78dabaa46b8667a964a9fde88216d0",
       "translation": "0d460a37001e4af040e782434a5814866c06e59c"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.name": {
+      "source": "695f7117c77d372c24254fff0abe91a1829e6b29",
+      "translation": "e1ad427daa55ba556e9af17afbf93799e683c2ab"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.description": {
+      "source": "a9e2f2a7f08510bb66d971ae37d7db56420de579",
+      "translation": "96c91c3b3b0959dd9bf6af6b9083c0f9d02354ab"
     },
     "settings.appearance.timeSettings.startTime.name": {
       "source": "88d8206d586abe4c8e35c8e9adcc649d07c99a1e",
@@ -22614,6 +22630,14 @@
       "source": "fc64db0c3d78dabaa46b8667a964a9fde88216d0",
       "translation": "74e9f45c14115c9e9c5e0951b3075fdefa561147"
     },
+    "settings.appearance.timeSettings.sideBySideOverlap.name": {
+      "source": "695f7117c77d372c24254fff0abe91a1829e6b29",
+      "translation": "c2b6a83a936655e2f155e8c91c706f3d7074a981"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.description": {
+      "source": "a9e2f2a7f08510bb66d971ae37d7db56420de579",
+      "translation": "02fa5013602f99aa65ff807c40f73c0d571884b6"
+    },
     "settings.appearance.timeSettings.startTime.name": {
       "source": "88d8206d586abe4c8e35c8e9adcc649d07c99a1e",
       "translation": "3ca90c1c63730e9855171e6d307b025866f7c391"
@@ -31961,6 +31985,14 @@
     "settings.appearance.timeSettings.snapDuration.placeholder": {
       "source": "fc64db0c3d78dabaa46b8667a964a9fde88216d0",
       "translation": "64b9403c6f6c5418b205a6a98275f261d12fb98d"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.name": {
+      "source": "695f7117c77d372c24254fff0abe91a1829e6b29",
+      "translation": "f6ade7a3e631d5b24ac5b785860bfbb3ce1d7c1a"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.description": {
+      "source": "a9e2f2a7f08510bb66d971ae37d7db56420de579",
+      "translation": "c30276c03320c860a5e9eb338a07eb030e72936e"
     },
     "settings.appearance.timeSettings.startTime.name": {
       "source": "88d8206d586abe4c8e35c8e9adcc649d07c99a1e",
@@ -41310,6 +41342,14 @@
       "source": "fc64db0c3d78dabaa46b8667a964a9fde88216d0",
       "translation": "6c8cf079f5ae1262b3c9a2860de4289d7862f5b8"
     },
+    "settings.appearance.timeSettings.sideBySideOverlap.name": {
+      "source": "695f7117c77d372c24254fff0abe91a1829e6b29",
+      "translation": "25ec62b33f6e4d2a3f19e93f79aac899cb0e1fbd"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.description": {
+      "source": "a9e2f2a7f08510bb66d971ae37d7db56420de579",
+      "translation": "901eb8207a8b2af574888e4b457da7470097aa3d"
+    },
     "settings.appearance.timeSettings.startTime.name": {
       "source": "88d8206d586abe4c8e35c8e9adcc649d07c99a1e",
       "translation": "c2a700baf031d3e98264f7480ada4e14c10e5278"
@@ -50658,6 +50698,14 @@
       "source": "fc64db0c3d78dabaa46b8667a964a9fde88216d0",
       "translation": "c753cc6d9de78f96211b75b80d303dfeb82760a5"
     },
+    "settings.appearance.timeSettings.sideBySideOverlap.name": {
+      "source": "695f7117c77d372c24254fff0abe91a1829e6b29",
+      "translation": "914255eb4728494c6b0e2f62ee43f21f677158f3"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.description": {
+      "source": "a9e2f2a7f08510bb66d971ae37d7db56420de579",
+      "translation": "07198caec735118424b8e4567c171f7568591c1d"
+    },
     "settings.appearance.timeSettings.startTime.name": {
       "source": "88d8206d586abe4c8e35c8e9adcc649d07c99a1e",
       "translation": "a8a606c7c69d1e5bd5bcabbcfe71cdaab9c46d5c"
@@ -60005,6 +60053,14 @@
     "settings.appearance.timeSettings.snapDuration.placeholder": {
       "source": "fc64db0c3d78dabaa46b8667a964a9fde88216d0",
       "translation": "650c97f4dd083c6789364c90be47568f7bbcbc33"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.name": {
+      "source": "695f7117c77d372c24254fff0abe91a1829e6b29",
+      "translation": "46246f8b6340125c46a1f69658d896ff1180e6dc"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.description": {
+      "source": "a9e2f2a7f08510bb66d971ae37d7db56420de579",
+      "translation": "3e7e6423d301883533509e165e70337c953842b7"
     },
     "settings.appearance.timeSettings.startTime.name": {
       "source": "88d8206d586abe4c8e35c8e9adcc649d07c99a1e",
@@ -69875,6 +69931,14 @@
     "settings.appearance.timeSettings.snapDuration.placeholder": {
       "source": "fc64db0c3d78dabaa46b8667a964a9fde88216d0",
       "translation": "1403015d4b3a681b1391eedbcebca35e68805b37"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.name": {
+      "source": "695f7117c77d372c24254fff0abe91a1829e6b29",
+      "translation": "132422fa9fcc3c531fc54a64091f19f4ae507524"
+    },
+    "settings.appearance.timeSettings.sideBySideOverlap.description": {
+      "source": "a9e2f2a7f08510bb66d971ae37d7db56420de579",
+      "translation": "a84e2669341971a3fb618e75f8726af3e2b9ece1"
     },
     "settings.appearance.timeSettings.startTime.name": {
       "source": "88d8206d586abe4c8e35c8e9adcc649d07c99a1e",
