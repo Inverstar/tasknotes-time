@@ -19,7 +19,7 @@ describe("calendar day navigation toolbar", () => {
 				"prevPeriod,prevDay,nextDay,nextPeriod"
 			)
 		).toBe(true);
-		expect(CALENDAR_DAY_NAVIGATION_TOOLBAR).toContain("today");
+		expect(CALENDAR_DAY_NAVIGATION_TOOLBAR).toContain("todayAligned");
 		expect(CALENDAR_DAY_NAVIGATION_TOOLBAR).toContain("refreshCalendars");
 	});
 });
