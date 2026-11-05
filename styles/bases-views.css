@@ -412,12 +412,15 @@ body.is-popout-window .markdown-embed .tn-tasknotesTaskList .tn-bases-items-cont
 }
 
 /* Keep hour labels readable at small slot heights without letting the label text
-   stretch the row: the frame collapses to zero height and the text overflows. */
+   stretch the row: FullCalendar gives the label frame 8px of vertical padding,
+   which survives height: 0 on a border-box element and makes labelled rows
+   taller than empty ones. Remove that padding and let the text overflow. */
 #bases-calendar .fc-timegrid-slot-label-frame {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     height: 0;
+    padding-block: 0;
     overflow: visible;
 }
 
