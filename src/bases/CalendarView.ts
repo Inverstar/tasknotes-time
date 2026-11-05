@@ -55,7 +55,7 @@ import { CalendarEventCreationModal } from "../modals/CalendarEventCreationModal
 import { ICSEventInfoModal } from "../modals/ICSEventInfoModal";
 import { Menu, Platform, TFile, setIcon, setTooltip } from "obsidian";
 import type { EventRef } from "obsidian";
-import { format } from "date-fns";
+import { format, startOfWeek, type Day } from "date-fns";
 import { TaskContextMenu } from "../components/TaskContextMenu";
 import { ICSEventContextMenu } from "../components/ICSEventContextMenu";
 import { parseDateToLocal } from "../utils/dateUtils";
@@ -1267,7 +1267,9 @@ export class CalendarView extends BasesViewBase {
 		if (!this.calendarEl) return;
 
 		// Determine initial date
-		const initialDate = this._recreateTargetDate ?? this.determineInitialDate(taskNotes);
+		const initialDate = this.alignWeekViewInitialDate(
+			this._recreateTargetDate ?? this.determineInitialDate(taskNotes)
+		);
 
 		// Build calendar options
 		const calendarOptions: CalendarOptions = {
@@ -1306,6 +1308,17 @@ export class CalendarView extends BasesViewBase {
 				list: this.plugin.i18n.translate("views.basesCalendar.hints.list") || "List view",
 			},
 			customButtons: {
+				todayAligned: {
+					text: this.plugin.i18n.translate("views.basesCalendar.today"),
+					hint:
+						this.plugin.i18n.translate("views.basesCalendar.hints.today") ||
+						"Go to today",
+					click: () => {
+						(this.calendar as unknown as CalendarApi | null)?.gotoDate(
+							this.alignWeekStart(new Date())
+						);
+					},
+				},
 				prevPeriod: {
 					text: "<<",
 					hint:
@@ -1648,6 +1661,32 @@ export class CalendarView extends BasesViewBase {
 		this.applyHeightModeClass();
 		this.applyTimeGridVisibilityClass();
 		this.applyCalendarModeClass();
+	}
+
+	/** Week views start on the first day of the week instead of today. */
+	private alignWeekStart(date: Date): Date {
+		if (this.viewOptions.calendarView !== "timeGridWeek") {
+			return date;
+		}
+
+		return startOfWeek(date, {
+			weekStartsOn: this.viewOptions.firstDay as Day,
+		});
+	}
+
+	private alignWeekViewInitialDate(
+		date: Date | string | undefined
+	): Date | string | undefined {
+		if (this.viewOptions.calendarView !== "timeGridWeek") {
+			return date;
+		}
+
+		const base = date ? new Date(date) : new Date();
+		if (Number.isNaN(base.getTime())) {
+			return date;
+		}
+
+		return this.alignWeekStart(base);
 	}
 
 	/**

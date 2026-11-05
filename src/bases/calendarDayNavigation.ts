@@ -19,4 +19,4 @@ export type CalendarDayNavigationButton = (typeof CALENDAR_DAY_NAVIGATION_BUTTON
 /** Ordered like `<< < > >>`, followed by the existing toolbar buttons. */
 export const CALENDAR_DAY_NAVIGATION_TOOLBAR = `${CALENDAR_DAY_NAVIGATION_BUTTONS.join(
 	","
-)} today refreshCalendars`;
+)} todayAligned refreshCalendars`;
